@@ -1,0 +1,17 @@
+{
+  "name": "hello-world-python",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^7.0.1",
+    "lodash": "^4.17.11",
+    "path": "^0.12.7",
+    "util": "^0.11.1"
+  }
+}
