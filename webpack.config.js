@@ -8,7 +8,7 @@ module.exports = {
   target: "node",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "./serverlesspluginthundra.js",
+    filename: "./bundle.js",
     libraryTarget: "commonjs2",
     library: "thundra"
   },

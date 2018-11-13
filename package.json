@@ -1,12 +1,12 @@
 {
-  "name": "hello-world-python",
+  "name": "serverless-plugin-thundra",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Thundra's serverless plugin for automatic wrapping",
+  "main": "dist/bundle.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack"
   },
-  "author": "",
+  "author": "Sarjeel Yusuf",
   "license": "ISC",
   "dependencies": {
     "fs-extra": "^7.0.1",
