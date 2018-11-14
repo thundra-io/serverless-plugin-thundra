@@ -161,7 +161,7 @@ class ServerlessThundraPlugin {
 
         const handler = _.isString(func.handler) ? func.handler.split(".") : [];
         const relativePath = handler.slice(0, -1).join(".");
-        if (func.disableThundra) {
+        if (func.disableAutoWrap) {
           this.log(
             `Automatic wrapping is disabled for function ${key}, skipping.`
           );

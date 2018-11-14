@@ -47,13 +47,12 @@ custom:
     apiKey: <YOUR THUNDRA API KEY>
 ```
 
-![add-servless-plugin](https://raw.githubusercontent.com/thundra-io/serverless-plugin-thundra/tree/plugin-dev/assets/thundra_serverless_plugin.gif)
-
-##Configuration
+## Configuration
 
 You can configure Thundra's serverless plugin to disable specific functions, or the whole plugin in general.
 
-###Disable Plugin:
+### Disable Plugin:
+
 You may disable Thundra's serverless plugin by using the `disable` variable under the `thundra` component which you added under `custom` when adding the plugin to
 your '.yml' file.
 
@@ -64,13 +63,14 @@ custom:
     disable: true
 ```
 
-###Disable Specific Functions:
-You may disable automatic wrapping of specific functions by using the `disableThundra` variable when defining your functions under the `functions` component.
+### Disable Specific Functions:
+
+You may disable automatic wrapping of specific functions by using the `disableAutoWrap` variable when defining your functions under the `functions` component.
 
 ```bash
 functions:
   hello-world-test:
     name: hello-world-test
     handler: index.handler
-    disableThundra: false
+    disableAutoWrap: false
 ```
