@@ -16,7 +16,9 @@ const VALIDATE_LIB_BY_LANG = {
    * Validates the python Thundra's library
    */
   python() {
-    this.log("Please ensure that Thundra's Python agent is installed");
+    this.log(
+      "Please ensure that all necessary Thundra Python agents are installed"
+    );
   },
   /**
    * Validates the node Thundra's library
@@ -27,14 +29,14 @@ const VALIDATE_LIB_BY_LANG = {
       pack = await fs.readJson(join(this.prefix, "package.json"));
     } catch (err) {
       this.log(
-        "Could not read package.json. Please ensure that Thundra's Node.js agent is installed."
+        "Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!"
       );
       return;
     }
     const { dependencies = [] } = pack;
     if (!Object.keys(dependencies).some(dep => dep === "@thundra/core")) {
       throw new Error(
-        "Thundra's Node.js library must be installed in order to use this plugin!"
+        "Thundra's Node library must be installed in order to use this plugin!"
       );
     }
   }
@@ -95,32 +97,43 @@ class ServerlessThundraPlugin {
    */
   async run() {
     this.config = this.getConfig();
-    this.doWrap = this.checkAPIKey;
-    if (this.doWrap) {
+    if (this.checkIfWrap()) {
       this.log("Wrapping your functions with Thundra...");
       this.funcs = this.findFuncs();
       await this.libCheck();
       await this.generateHandlers();
       this.assignHandlers();
-      this.log("Your functions are now wrapped. Begin Flight!");
     } else {
       return;
     }
   }
 
   /**
+   * Checks that all of the required Thundra libraries are installed.
+   */
+  async libCheck() {
+    const languages = _.uniq(this.funcs.map(func => func.language));
+    await Promise.all(
+      languages.map(async lang => {
+        await VALIDATE_LIB_BY_LANG[lang].bind(this)();
+      })
+    );
+  }
+
+  /**
    * Checks if a Thundra API key has been provided in .yml file
    * @return {Boolean} Prescence of Thundra API Key.
    */
-  checkAPIKey() {
-    if (!this.config.thundraApiKey) {
-      this.log(
-        "Thundra API Key not provided as enviroment variable in serverless file. Function wrapping skipped"
-      );
+  checkIfWrap() {
+    if (this.config.disable) {
+      this.log("Automatic Wrapping is dsabled.");
       return false;
-    } else {
-      return true;
     }
+    if (!this.config.apiKey) {
+      this.log("Thundra API Key not provided. Function wrapping skipped");
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -148,69 +161,29 @@ class ServerlessThundraPlugin {
 
         const handler = _.isString(func.handler) ? func.handler.split(".") : [];
         const relativePath = handler.slice(0, -1).join(".");
-        const handlerMethod = handler[1];
-
-        var handlerFile = join(handler[0], ".py")
-          .split("/")
-          .join("");
-        handlerFile = join(this.prefix, handlerFile);
-
-        result.push(
-          Object.assign(func, {
-            method: _.last(handler),
-            key,
-            relativePath,
-            language,
-            thundraHandler: `${key}-thundra`,
-            handlerFile,
-            handlerMethod,
-            pyMethodDef: null
-          })
-        );
+        if (func.disableThundra) {
+          this.log(
+            `Automatic wrapping is disabled for function ${key}, skipping.`
+          );
+        } else {
+          result.push(
+            Object.assign(func, {
+              method: _.last(handler),
+              key,
+              relativePath,
+              language,
+              thundraHandler: `${key}-thundra`
+            })
+          );
+        }
         return result;
       },
       []
     );
   }
 
-  async getPyParams() {
-    await Promise.all(
-      this.funcs.map(async func => {
-        this.log(`Language Seen: ${func.language}`);
-
-        try {
-          let contents = fs.readFileSync(func.handlerFile, "utf8");
-          if (contents.includes(func.handlerMethod)) {
-            let method = contents.slice(
-              contents.indexOf(func.handlerMethod),
-              contents.indexOf(":")
-            );
-            let params = method.slice(method.indexOf("("));
-            this.log(`PARAMS SEENS ${params}`);
-            func.pyMethodDef = params;
-            this.log(`PYNUM IN METHOD: ${func.pyMethodDef}`);
-          }
-        } catch (err) {
-          this.log(`Could not read handler file: ${err}`);
-        }
-      })
-    );
-  }
-
   /**
-   * Ensure all Thundra agent libraries present
-   */
-  async libCheck() {
-    const languages = _.uniq(this.funcs.map(func => func.language));
-    await Promise.all(
-      languages.map(async lang => {
-        await VALIDATE_LIB_BY_LANG[lang].bind(this)();
-      })
-    );
-  }
-
-  /**
-   * Gnerating handler files.
+   * Generates the Thundra handlers and writes them to the FS.
    */
   async generateHandlers() {
     const handlersFullDirPath = join(
@@ -236,7 +209,7 @@ class ServerlessThundraPlugin {
   }
 
   /**
-   * Substitutes original handlers with Thundra's handlers.
+   * Replaces the functions original handlers with Thundra's handlers.
    */
   assignHandlers() {
     this.funcs.forEach(func => {
@@ -252,7 +225,7 @@ class ServerlessThundraPlugin {
   }
 
   /**
-   * Gets config info.
+   * Gets the plugin config.
    * @returns {Object} The config object
    */
   getConfig() {
@@ -260,7 +233,7 @@ class ServerlessThundraPlugin {
       {
         thundraHandlerDir: "thundra_handlers"
       },
-      this.serverless.service.custom || {} || {}
+      (this.serverless.service.custom || {}).thundra || {}
     );
   }
 
