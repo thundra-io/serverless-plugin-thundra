@@ -17,12 +17,60 @@ Thundra's serverless plugin allows you to automatically wrap your Python and Nod
 Please ensure that along with this library, you also dowload the respective library of the Thundra agent related to the language in which you are
 developing.
 
-After installing Thundra's serverless plugin with the `npm install serverless-plugin-thundra`. Add it to your serverless plugins by including it
-under the `plugins` section of your '.yml' file.
+For Thundra's Python agent:
+
+```bash
+pip3 install thundra -t .
+```
+
+For Thundra's Node agent:
+
+```bash
+npm install @thundra/core --save
+```
+
+After installing the respective Thundra agent and Thundra's serverless plugin with the `npm install serverless-plugin-thundra`. Add it to your serverless
+plugins by including itunder the `plugins` section of your '.yml' file.
 
 ```bash
 plugins:
   - serverless-plugin-thundra
 ```
 
+Ensure that the plugin is the first plugin you add under `plugins`
+
+Furthrmore, add the `thundra` component under `custom` with `apiKey` under that, as seen below:
+
+```bash
+custom:
+  thundra:
+    apiKey: <YOUR THUNDRA API KEY>
+```
+
 ![add-servless-plugin](https://raw.githubusercontent.com/thundra-io/serverless-plugin-thundra/tree/plugin-dev/assets/thundra_serverless_plugin.gif)
+
+##Configuration
+
+You can configure Thundra's serverless plugin to disable specific functions, or the whole plugin in general.
+
+###Disable Plugin:
+You may disable Thundra's serverless plugin by using the `disable` variable under the `thundra` component which you added under `custom` when adding the plugin to
+your '.yml' file.
+
+```bash
+custom:
+  thundra:
+    apiKey: <YOUR THUNDRA API KEY>
+    disable: true
+```
+
+###Disable Specific Functions:
+You may disable automatic wrapping of specific functions by using the `disableThundra` variable when defining your functions under the `functions` component.
+
+```bash
+functions:
+  hello-world-test:
+    name: hello-world-test
+    handler: index.handler
+    disableThundra: false
+```
