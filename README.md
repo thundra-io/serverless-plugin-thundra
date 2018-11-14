@@ -25,4 +25,4 @@ plugins:
   - serverless-plugin-thundra
 ```
 
-![add-servless-plugin](./assets/thundra_serverless_plugin.gif)
+![add-servless-plugin](../assets/thundra_serverless_plugin.gif)
