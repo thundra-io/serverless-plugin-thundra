@@ -1,4 +1,5 @@
 # serverless-plugin-thundra
+[![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 
 Automatically wrap your AWS Lambda functions with Thundra for the serverless framework ⚡️ https://thundra.io
 
@@ -41,7 +42,7 @@ plugins:
 
 Ensure that the plugin is the first plugin you add under `plugins`
 
-Furthrmore, add the `thundra` component under `custom` with `apiKey` under that, as seen below:
+Furthermore, add the `thundra` component under `custom` with `apiKey` under that, as seen below:
 
 ```bash
 custom:
