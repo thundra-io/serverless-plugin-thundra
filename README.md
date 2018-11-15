@@ -1,6 +1,6 @@
 # serverless-plugin-thundra
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
-[![npm version](https://badge.fury.io/js/@thundra/core.svg)](https://badge.fury.io/js/@thundra/core)
+[![npm version](https://badge.fury.io/js/serverless-plugin-thundra.svg)](https://badge.fury.io/js/serverless-plugin-thundra)
 
 Automatically wrap your AWS Lambda functions with Thundra for the serverless framework ⚡️ https://thundra.io
 
