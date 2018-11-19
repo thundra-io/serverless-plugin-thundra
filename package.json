@@ -5,8 +5,12 @@
     "main": "dist/bundle.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "prettier --config .prettierrc.json --write ./src/*.js; webpack"
+        "build": "prettier --config .prettierrc.json --write ./src/*.js; webpack",
+        "prepublish": "webpack"
     },
+    "files": [
+        "dist/"
+    ],
     "author": "Sarjeel Yusuf",
     "license": "ISC",
     "dependencies": {
