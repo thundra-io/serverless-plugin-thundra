@@ -1,11 +1,11 @@
 const THUNDRA_LANG_WRAPPERS = {
-  node: `
+    node: `
     const thundra = require('@thundra/core')();
     const handler = require('../PATH.js');
     
     exports.METHOD = thundra(handler.METHOD);
     `,
-  python: `
+    python: `
 from thundra.thundra_agent import Thundra
 from PATH import METHOD as actual_METHOD
 
@@ -14,13 +14,13 @@ thundra = Thundra()
 @thundra
 def METHOD(event, context):
   return actual_METHOD(event, context)
-      `
-};
+      `,
+}
 
 const EXTENTION_GENERATORS = {
-  node: name => `${name}.js`,
-  python: name => `${name}.py`
-};
+    node: name => `${name}.js`,
+    python: name => `${name}.py`,
+}
 
 /**
  * Wrapper name with extension generator
@@ -28,8 +28,8 @@ const EXTENTION_GENERATORS = {
  * @return {String} The generated name.
  */
 exports.generateWrapperExt = function(func) {
-  return EXTENTION_GENERATORS[func.language](func.thundraHandler);
-};
+    return EXTENTION_GENERATORS[func.language](func.thundraHandler)
+}
 
 /**
  * Thundra wrapper code generated
@@ -37,9 +37,9 @@ exports.generateWrapperExt = function(func) {
  * @return {String} The wrapper code.
  */
 exports.generateWrapperCode = function(func) {
-  return THUNDRA_LANG_WRAPPERS[func.language]
-    .replace(/PATH/g, func.relativePath)
-    .replace(/METHOD/g, func.method);
-};
+    return THUNDRA_LANG_WRAPPERS[func.language]
+        .replace(/PATH/g, func.relativePath)
+        .replace(/METHOD/g, func.method)
+}
 
-module.exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS);
+module.exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)
