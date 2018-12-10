@@ -39,7 +39,7 @@ plugins:
   - serverless-plugin-thundra
 ```
 
-![add-servless-plugin](./assets/thundra_serverless_plugin.gif)
+![add-servless-plugin](./assets/thundra-serverless-plugin.gif)
 
 Ensure that the plugin is the first plugin you add under `plugins`
 
