@@ -49,6 +49,10 @@ Furthermore, add the `thundra` component under `custom` with `apiKey` under that
 custom:
   thundra:
     apiKey: <YOUR THUNDRA API KEY>
+....
+provider:
+  environment:
+    thundra_apiKey: ${self.custom.thundra.apiKey}
 ```
 
 ## Configuration
@@ -65,10 +69,6 @@ custom:
   thundra:
     apiKey: <YOUR THUNDRA API KEY>
     disable: true
-....
-provider:
-  environment:
-    thundra_apiKey: ${self.custom.thundra.apiKey}
 ```
 
 ### Disable Specific Functions:
