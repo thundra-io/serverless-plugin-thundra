@@ -152,14 +152,18 @@ class ServerlessThundraPlugin {
                     ? func.handler.split('.')
                     : []
                 let relativePath = ''
-
+                let localThundraDir = ''
                 if (language == 'python') {
                     relativePath = handler.slice(0, -1).join('.')
                     relativePath = relativePath.replace(/\//g, '.')
                 } else {
                     relativePath = handler.slice(0, -1).join('.')
+                    let lastSlashIndex = relativePath.lastIndexOf('/')
+                    if (lastSlashIndex != -1) {
+                        localThundraDir = relativePath.slice(0, lastSlashIndex+1) + 'node_modules'
+                    }
                 }
-
+                
                 if (func.disableAutoWrap) {
                     this.log(
                         `Automatic wrapping is disabled for function ${key}, skipping.`
@@ -172,6 +176,7 @@ class ServerlessThundraPlugin {
                             key,
                             relativePath,
                             language,
+                            localThundraDir,
                             thundraHandler: `${key}-thundra`,
                         })
                     )

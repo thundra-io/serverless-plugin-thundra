@@ -1,9 +1,20 @@
+const _ = require('lodash')
+
 const THUNDRA_LANG_WRAPPERS = {
     node: `
-    const thundra = require('@thundra/core')();
-    const handler = require('../PATH.js');
-    
-    exports.METHOD = thundra(handler.METHOD);
+var thundra;
+try {
+    thundra = require('@thundra/core')();
+} catch (err) {
+    try {
+        thundra = require('../LOCAL_THUNDRA_DIR/@thundra/core')();
+    } catch (err) {
+        thundra = require('../NODE_MODULES/@thundra/core')();
+    }
+} 
+const handler = require('../PATH.js');
+
+exports.METHOD = thundra(handler.METHOD);
     `,
     python: `
 from thundra.thundra_agent import Thundra
@@ -37,9 +48,12 @@ exports.generateWrapperExt = function(func) {
  * @return {String} The wrapper code.
  */
 exports.generateWrapperCode = function(func) {
+    let customNodePath = _.get(func, 'custom.thundra.node_modules_path', '')
     return THUNDRA_LANG_WRAPPERS[func.language]
-        .replace(/PATH/g, func.relativePath)
-        .replace(/METHOD/g, func.method)
+    .replace(/PATH/g, func.relativePath)
+    .replace(/METHOD/g, func.method)
+    .replace(/LOCAL_THUNDRA_DIR/g, func.localThundraDir)
+    .replace(/NODE_MODULES/g, customNodePath)
 }
 
 module.exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)
