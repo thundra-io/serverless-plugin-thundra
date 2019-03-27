@@ -19,14 +19,16 @@ const VALIDATE_LIB_BY_LANG = {
      * Validates the node Thundra's library
      */
     node() {
+        let pack;
         try {
             pack = fs.readJsonSync(join(this.prefix, 'package.json'))
-            const { dependencies = [] } = pack
-            if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
-                throw new Error("Thundra's Node library must be installed in order to use this plugin!")
-            }
         } catch(err) {
             this.log('Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!')
+            return
+        }
+        const { dependencies = [] } = pack
+        if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
+            throw new Error("Thundra's Node library must be installed in order to use this plugin!")
         }
     },
 }
