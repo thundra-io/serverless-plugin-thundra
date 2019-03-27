@@ -1,6 +1,5 @@
 const fs = require('fs-extra')
 const { join } = require('path')
-const { promisify } = require('util')
 const _ = require('lodash')
 const {
     AGENT_LANGS,
@@ -8,36 +7,26 @@ const {
     generateWrapperExt,
 } = require('./handlers')
 
-const mkdir = promisify(fs.mkdir)
-const writeFile = promisify(fs.writeFile)
 
 const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the python Thundra's library
      */
     python() {
-        this.log(
-            'Please ensure that all necessary Thundra Python agents are installed'
-        )
+        this.log('Please ensure that all necessary Thundra Python agents are installed')
     },
     /**
      * Validates the node Thundra's library
      */
-    async node() {
-        let pack
+    node() {
         try {
-            pack = await fs.readJson(join(this.prefix, 'package.json'))
-        } catch (err) {
-            this.log(
-                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!'
-            )
-            return
-        }
-        const { dependencies = [] } = pack
-        if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
-            throw new Error(
-                "Thundra's Node library must be installed in order to use this plugin!"
-            )
+            pack = fs.readJsonSync(join(this.prefix, 'package.json'))
+            const { dependencies = [] } = pack
+            if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
+                throw new Error("Thundra's Node library must be installed in order to use this plugin!")
+            }
+        } catch(err) {
+            this.log('Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!')
         }
     },
 }
@@ -99,13 +88,13 @@ class ServerlessThundraPlugin {
     /**
      * Wraps function handlers with Thundra
      */
-    async run() {
+    run() {
         this.config = this.getConfig()
         if (this.checkIfWrap()) {
             this.log('Wrapping your functions with Thundra...')
             this.funcs = this.findFuncs()
-            await this.libCheck()
-            await this.generateHandlers()
+            this.libCheck()
+            this.generateHandlers()
             this.assignHandlers()
         } else {
             return
@@ -115,13 +104,11 @@ class ServerlessThundraPlugin {
     /**
      * Checks that all of the required Thundra libraries are installed.
      */
-    async libCheck() {
+    libCheck() {
         const languages = _.uniq(this.funcs.map(func => func.language))
-        await Promise.all(
-            languages.map(async lang => {
-                await VALIDATE_LIB_BY_LANG[lang].bind(this)()
-            })
-        )
+        languages.forEach(lang => {
+            VALIDATE_LIB_BY_LANG[lang].bind(this)()
+        })
     }
 
     /**
@@ -145,14 +132,16 @@ class ServerlessThundraPlugin {
      * @return {Array} The functions to wrap.
      */
     findFuncs() {
-        return Object.entries(this.serverless.service.functions).reduce(
-            (result, pair) => {
-                const [key, func] = pair
+        let funcs = []
+        const slsFunctions = this.serverless.service.functions
+        for (const key in slsFunctions) {
+            if (slsFunctions.hasOwnProperty(key)) {
+                const func = slsFunctions[key]
                 const runtime =
                     func.runtime || this.serverless.service.provider.runtime
 
                 if (!_.isString(runtime)) {
-                    return result
+                    continue
                 }
 
                 const language = AGENT_LANGS.find(lang => runtime.match(lang))
@@ -160,7 +149,7 @@ class ServerlessThundraPlugin {
                     this.log(
                         `Thundra does not support "${runtime}" at the moment, skipping function ${key}`
                     )
-                    return result
+                    continue
                 }
 
                 const handler = _.isString(func.handler)
@@ -179,8 +168,9 @@ class ServerlessThundraPlugin {
                     this.log(
                         `Automatic wrapping is disabled for function ${key}, skipping.`
                     )
+                    continue
                 } else {
-                    result.push(
+                    funcs.push(
                         Object.assign(func, {
                             method: _.last(handler),
                             key,
@@ -190,36 +180,31 @@ class ServerlessThundraPlugin {
                         })
                     )
                 }
-                return result
-            },
-            []
-        )
+            }
+        }
+
+        return funcs
     }
 
     /**
      * Generates the Thundra handlers and writes them to the FS.
      */
-    async generateHandlers() {
+    generateHandlers() {
         const handlersFullDirPath = join(
             this.originalServicePath,
             this.config.thundraHandlerDir
         )
         try {
-            await mkdir(handlersFullDirPath)
+            fs.mkdirSync(handlersFullDirPath)
         } catch (err) {
             if (err.code !== 'EEXIST') {
                 throw err
             }
         }
-        await Promise.all(
-            this.funcs.map(async func => {
-                const handlerCode = generateWrapperCode(func, this.config)
-                await writeFile(
-                    join(handlersFullDirPath, generateWrapperExt(func)),
-                    handlerCode
-                )
-            })
-        )
+        this.funcs.forEach(func => {
+            const handlerCode = generateWrapperCode(func, this.config)
+            fs.writeFileSync(join(handlersFullDirPath, generateWrapperExt(func)), handlerCode)
+        })
     }
 
     /**
