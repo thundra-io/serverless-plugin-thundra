@@ -112,16 +112,12 @@ class ServerlessThundraPlugin {
     }
 
     /**
-     * Checks if a Thundra API key has been provided in .yml file
-     * @return {Boolean} Prescence of Thundra API Key.
+     * Checks if thundra plugin is disabled .yml file
+     * @return {Boolean} Whether Thundra pluging is disabled
      */
     checkIfWrap() {
         if (this.config.disable) {
             this.log('Automatic Wrapping is dsabled.')
-            return false
-        }
-        if (!this.config.apiKey) {
-            this.log('Thundra API Key not provided. Function wrapping skipped')
             return false
         }
         return true
