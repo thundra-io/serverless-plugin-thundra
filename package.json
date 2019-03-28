@@ -3,6 +3,7 @@
     "version": "1.1.0",
     "description": "Thundra's serverless plugin for automatic wrapping",
     "main": "dist/bundle.js",
+    "keywords": ["serverless", "thundra", "lambda", "aws"],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "prettier --config .prettierrc.json --write ./src/*.js; webpack",
@@ -12,7 +13,7 @@
     "files": [
         "dist/"
     ],
-    "author": "Hamit Burak Emre",
+    "author": "Hamit Burak Emre <hamit@thundra.io> (https://www.thundra.io)",
     "license": "ISC",
     "dependencies": {
         "fs-extra": "^7.0.1",
