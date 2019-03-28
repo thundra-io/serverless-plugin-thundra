@@ -73,7 +73,7 @@ functions:
 ```
 
 ### Defining custom `node_modules` path for functions [Node.js]
-By default, plugin searches for `@thundra/core` package in the following directories:
+By default, plugin searches for `@thundra/core` package in the following directories, `@thundra/core` package should be available in at least one of them:
 
 * Any directory in `modules.paths` (default search paths used by `require`)
 * \<directory that contains handler file for a spesific function\>/node_modules
