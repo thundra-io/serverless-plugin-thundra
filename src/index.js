@@ -173,7 +173,7 @@ class ServerlessThundraPlugin {
                     }
                 }
 
-                if (func.disableAutoWrap) {
+                if (_.get(func, 'custom.thundra.disable', false)) {
                     this.log(
                         `Automatic wrapping is disabled for function ${key}, skipping.`
                     )

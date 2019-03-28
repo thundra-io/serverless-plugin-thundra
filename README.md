@@ -43,18 +43,6 @@ plugins:
 
 Ensure that the plugin is the first plugin you add under `plugins`
 
-Furthermore, add the `thundra` component under `custom` with `apiKey` under that, as seen below:
-
-```bash
-custom:
-  thundra:
-    apiKey: <YOUR THUNDRA API KEY>
-....
-provider:
-  environment:
-    thundra_apiKey: ${self.custom.thundra.apiKey}
-```
-
 ## Configuration
 
 You can configure Thundra's serverless plugin to disable specific functions, or the whole plugin in general.
@@ -67,7 +55,6 @@ your '.yml' file.
 ```bash
 custom:
   thundra:
-    apiKey: <YOUR THUNDRA API KEY>
     disable: true
 ```
 
@@ -80,5 +67,23 @@ functions:
   hello-world-test:
     name: hello-world-test
     handler: index.handler
-    disableAutoWrap: false
+    custom:
+      thundra:
+        disable: true
+```
+
+### Defining custom `node_modules` path for functions [Node.js]
+By default, plugin searches for `@thundra/core` package in the following directories:
+
+* Any directory in `modules.paths` (default search paths used by `require`)
+* \<directory that contains handler file for a spesific function\>/node_modules
+* The directory that is given as follows:
+```bash
+functions:
+  hello-world-test:
+    name: hello-world-test
+    handler: index.handler
+    custom:
+      thundra:
+        node_modules_path: <directory that contains @thundra/core>
 ```
