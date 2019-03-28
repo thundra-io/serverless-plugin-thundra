@@ -50,10 +50,10 @@ exports.generateWrapperExt = function(func) {
 exports.generateWrapperCode = function(func) {
     let customNodePath = _.get(func, 'custom.thundra.node_modules_path', '')
     return THUNDRA_LANG_WRAPPERS[func.language]
-    .replace(/PATH/g, func.relativePath)
-    .replace(/METHOD/g, func.method)
-    .replace(/LOCAL_THUNDRA_DIR/g, func.localThundraDir)
-    .replace(/NODE_MODULES/g, customNodePath)
+        .replace(/PATH/g, func.relativePath)
+        .replace(/METHOD/g, func.method)
+        .replace(/LOCAL_THUNDRA_DIR/g, func.localThundraDir)
+        .replace(/NODE_MODULES/g, customNodePath)
 }
 
 module.exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)

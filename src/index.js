@@ -7,28 +7,33 @@ const {
     generateWrapperExt,
 } = require('./handlers')
 
-
 const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the python Thundra's library
      */
     python() {
-        this.log('Please ensure that all necessary Thundra Python agents are installed')
+        this.log(
+            'Please ensure that all necessary Thundra Python agents are installed'
+        )
     },
     /**
      * Validates the node Thundra's library
      */
     node() {
-        let pack;
+        let pack
         try {
             pack = fs.readJsonSync(join(this.prefix, 'package.json'))
-        } catch(err) {
-            this.log('Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!')
+        } catch (err) {
+            this.log(
+                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!'
+            )
             return
         }
         const { dependencies = [] } = pack
         if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
-            throw new Error("Thundra's Node library must be installed in order to use this plugin!")
+            throw new Error(
+                "Thundra's Node library must be installed in order to use this plugin!"
+            )
         }
     },
 }
@@ -162,10 +167,12 @@ class ServerlessThundraPlugin {
                     relativePath = handler.slice(0, -1).join('.')
                     let lastSlashIndex = relativePath.lastIndexOf('/')
                     if (lastSlashIndex != -1) {
-                        localThundraDir = relativePath.slice(0, lastSlashIndex+1) + 'node_modules'
+                        localThundraDir =
+                            relativePath.slice(0, lastSlashIndex + 1) +
+                            'node_modules'
                     }
                 }
-                
+
                 if (func.disableAutoWrap) {
                     this.log(
                         `Automatic wrapping is disabled for function ${key}, skipping.`
@@ -206,7 +213,10 @@ class ServerlessThundraPlugin {
         }
         this.funcs.forEach(func => {
             const handlerCode = generateWrapperCode(func, this.config)
-            fs.writeFileSync(join(handlersFullDirPath, generateWrapperExt(func)), handlerCode)
+            fs.writeFileSync(
+                join(handlersFullDirPath, generateWrapperExt(func)),
+                handlerCode
+            )
         })
     }
 
