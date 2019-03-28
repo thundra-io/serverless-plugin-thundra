@@ -60,7 +60,7 @@ custom:
 
 ### Disable Specific Functions:
 
-You may disable automatic wrapping of specific functions by using the `disableAutoWrap` variable when defining your functions under the `functions` component.
+You may disable automatic wrapping of specific functions by setting `disable` to `true`, under the `custom.thundra` for the function you want.
 
 ```bash
 functions:
