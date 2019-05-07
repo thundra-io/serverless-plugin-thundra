@@ -26,6 +26,7 @@ thundra = Thundra()
 def METHOD(event, context):
   return actual_METHOD(event, context)
       `,
+    java8: null,
 }
 
 const EXTENTION_GENERATORS = {
