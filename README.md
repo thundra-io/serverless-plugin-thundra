@@ -16,7 +16,7 @@ npm install serverless-plugin-thundra
 
 Thundra's serverless plugin allows you to automatically wrap your Python and Node.js Lambda functions to enable monitoring with Thundra.
 
-Please ensure that along with this library, you also dowload the respective library of the Thundra agent related to the language in which you are
+Please ensure that along with this library, you also download the respective library of the Thundra agent related to the language in which you are
 developing.
 
 For Thundra's Python agent:
@@ -86,4 +86,30 @@ functions:
     custom:
       thundra:
         node_modules_path: <directory that contains @thundra/core>
+```
+
+### Specify Layer version [Java]
+By default, plugin uses default Java layer version of the plugin and it might be changed by each version of plugin.
+But it can be specified by configuration property in the yml file globally and/or function based.
+
+**Globally:**
+```bash
+custom:
+  thundra:
+    java:
+      layer:
+        version: <layer version of the Java agent>
+```
+
+**For per function:**
+```bash
+functions:
+  hello-world-test:
+    name: hello-world-test
+    handler: com.mycompany.HelloWorlHandler
+    custom:
+      thundra:
+        java:
+          layer:
+            version: <layer version of the Java agent>
 ```
