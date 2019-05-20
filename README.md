@@ -80,6 +80,15 @@ By default, plugin searches for `@thundra/core` package in the following directo
 * Any directory in `modules.paths` (default search paths used by `require`)
 * \<directory that contains handler file for a specific function\>/node_modules
 * The directory that is given as follows:
+
+**Globally**
+```bash
+custom:
+  thundra:
+    node_modules_path: <directory that contains @thundra/core>
+```
+
+**Or per function:**
 ```bash
 functions:
   hello-world-test:
