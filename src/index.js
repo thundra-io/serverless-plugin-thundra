@@ -57,8 +57,7 @@ class ServerlessThundraPlugin {
     constructor(serverless = {}, options) {
         this.serverless = serverless
         this.prefix =
-            ((this.serverless.service.custom || { thundra: {} }).thundra || {})
-                .package_json_path ||
+            _.get(serverless.service, 'custom.thundra.package_json_path') ||
             options.prefix ||
             process.env.npm_config_prefix ||
             this.serverless.config.servicePath
