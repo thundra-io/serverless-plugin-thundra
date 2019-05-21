@@ -48,8 +48,11 @@ exports.generateWrapperExt = function(func) {
  * @param {Object} func The function to wrap.
  * @return {String} The wrapper code.
  */
-exports.generateWrapperCode = function(func) {
-    let customNodePath = _.get(func, 'custom.thundra.node_modules_path', '')
+exports.generateWrapperCode = function(func, config) {
+    let customNodePath =
+        _.get(func, 'custom.thundra.node_modules_path') ||
+        config.node_modules_path ||
+        ''
     return THUNDRA_LANG_WRAPPERS[func.language]
         .replace(/PATH/g, func.relativePath)
         .replace(/METHOD/g, func.method)

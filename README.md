@@ -78,8 +78,17 @@ functions:
 By default, plugin searches for `@thundra/core` package in the following directories, `@thundra/core` package should be available in at least one of them:
 
 * Any directory in `modules.paths` (default search paths used by `require`)
-* \<directory that contains handler file for a spesific function\>/node_modules
+* \<directory that contains handler file for a specific function\>/node_modules
 * The directory that is given as follows:
+
+**Globally**
+```bash
+custom:
+  thundra:
+    node_modules_path: <directory that contains @thundra/core>
+```
+
+**Or per function:**
 ```bash
 functions:
   hello-world-test:
@@ -89,6 +98,21 @@ functions:
       thundra:
         node_modules_path: <directory that contains @thundra/core>
 ```
+
+### Defining custom `package.json` path [Node.js]
+By default, this plugin searches for the `package.json` file in the root serverless application directory and if the file is found, it ensures that the 
+`@thundra/core` package is installed. There are repositories that use multiple `package.json` files and the default one is not the one where the module 
+dependencies are defined (this is particularly common with monorepo directory structures). The `package_json_path` can be used to specify the directory 
+where to look for the correct `package.json` file.
+
+This can be defined globally as follows:
+```bash
+custom:
+  thundra:
+    package_json_path: <directory that contains correct package.json>
+```
+
+Alternatively, this can be overriden using the serverless cli argument `--prefix=<directory` or the `npm_config_prefix` environment variable.
 
 ### Specify Layer version [Java]
 By default, plugin uses default Java layer version of the plugin and it might be changed by each version of plugin.
