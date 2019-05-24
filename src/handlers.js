@@ -60,4 +60,4 @@ exports.generateWrapperCode = function(func, config) {
         .replace(/NODE_MODULES/g, customNodePath)
 }
 
-module.exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)
+exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)
