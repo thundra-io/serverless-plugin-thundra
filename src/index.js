@@ -179,10 +179,20 @@ class ServerlessThundraPlugin {
                 func.layers = func.layers || []
 
                 if (language == 'python') {
-                    // relativePath = handler.slice(0, -1).join('.')
-                    // relativePath = relativePath.replace(/\//g, '.')
-                    this.addLayer(func, funcName, 'python')
-                    continue
+                    let method = _.get(func, 'custom.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.python.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.mode')
+                            || 'layer'
+                    if (method === 'layer') {
+                        this.addLayer(func, funcName, 'python')
+                        continue
+                    } else if (method === 'wrap') {
+                        relativePath = handler.slice(0, -1).join('.')
+                        relativePath = relativePath.replace(/\//g, '.')
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
+                    }
                 } else if (language == 'node') {
                     relativePath = handler.slice(0, -1).join('.')
                     let lastSlashIndex = relativePath.lastIndexOf('/')
@@ -192,19 +202,31 @@ class ServerlessThundraPlugin {
                             'node_modules'
                     }
                 } else if (language == 'java8') {
-                    if (func.handler.includes('::')) {
+                    let method = _.get(func, 'custom.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.java.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.mode')
+                            ||  'layer'
+                    if (method === 'layer') {
+                        if (func.handler.includes('::')) {
+                            this.log(
+                                'Method specification for handler by "::" is not supported. ' +
+                                    'So function ' +
+                                    funcName +
+                                    ' will not be wrapped!'
+                            )
+                            continue
+                        }
+                        this.addLayer(func, funcName, 'java')
+                        continue
+                    } else if (method === 'wrap') {
                         this.log(
-                            'Method specification for handler by "::" is not supported. ' +
-                                'So function ' +
-                                funcName +
-                                ' will not be wrapped!'
+                            'Code wrapping is not supported for java lambda functions. ' + 
+                            'Please use \'layer\' method instead.'
                         )
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-
-                    this.addLayer(func, funcName, 'java')
-
-                    continue
                 }
 
                 funcs.push(
@@ -232,7 +254,6 @@ class ServerlessThundraPlugin {
             layerAwsAccountNo,
         } = layerInfo
         const {
-            layerVersionPropName,
             layerName,
             defaultLayerVersion,
             thundraHandlerName,
@@ -286,17 +307,20 @@ class ServerlessThundraPlugin {
             const layerRegion = this.serverless.service.provider.region
             const globalLayerVersion = _.get(
                 this.serverless.service,
-                layerVersionPropName
+                'custom.thundra.layer.version',
+            )
+            const globalLangLayerVersion = _.get(
+                this.serverless.service,
+                `custom.thundra.${lang}.layer.version`,
             )
             const funcLayerVersion = _.get(
                 func,
-                layerVersionPropName
+                `custom.thundra.layer.version`,
             )
             const layerVersion = funcLayerVersion
-                ? funcLayerVersion
-                : globalLayerVersion
-                ? globalLayerVersion
-                : defaultLayerVersion
+                || globalLangLayerVersion
+                || globalLayerVersion
+                || defaultLayerVersion
             const layerARN = getLayerARN(
                 layerRegion,
                 layerAwsAccountNo,
@@ -313,6 +337,13 @@ class ServerlessThundraPlugin {
     warnThundraDisabled(funcName) {
         this.log(
             `Thundra integration is disabled for function ${funcName}, skipping.`
+        )
+    }
+    
+    warnMethodNotSupported(funcName, method) {
+        this.log(
+            `Given method '${method}' for function with the name '${funcName}' is not a valid method ` +
+            'please use one of the followings: \'layer\', \'wrap\'. Skipping...'
         )
     }
 

@@ -1,12 +1,10 @@
 exports.layerInfo = {
     java: {
-        layerVersionPropName: 'custom.thundra.java.layer.version',
         layerName: 'thundra-lambda-java-layer',
         defaultLayerVersion: '14',
         thundraHandlerName: 'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler'
     },
     python: {
-        layerVersionPropName: 'custom.thundra.python.layer.version',
         layerName: 'thundra-lambda-python-layer',
         defaultLayerVersion: '7',
         thundraHandlerName: 'thundra.handler.wrapper'
