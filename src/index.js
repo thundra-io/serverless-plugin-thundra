@@ -194,12 +194,24 @@ class ServerlessThundraPlugin {
                         continue
                     }
                 } else if (language == 'node') {
-                    relativePath = handler.slice(0, -1).join('.')
-                    let lastSlashIndex = relativePath.lastIndexOf('/')
-                    if (lastSlashIndex != -1) {
-                        localThundraDir =
-                            relativePath.slice(0, lastSlashIndex + 1) +
-                            'node_modules'
+                    let method = _.get(func, 'custom.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.node.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.mode')
+                            || 'layer'
+                    if (method === 'layer') {
+                        this.addLayer(func, funcName, 'node')
+                        continue
+                    } else if (method === 'wrap') {
+                        relativePath = handler.slice(0, -1).join('.')
+                        let lastSlashIndex = relativePath.lastIndexOf('/')
+                        if (lastSlashIndex != -1) {
+                            localThundraDir =
+                                relativePath.slice(0, lastSlashIndex + 1) +
+                                'node_modules'
+                        }
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
                     }
                 } else if (language == 'java8') {
                     let method = _.get(func, 'custom.thundra.mode')
@@ -257,29 +269,33 @@ class ServerlessThundraPlugin {
             layerName,
             defaultLayerVersion,
             thundraHandlerName,
+            needHandlerDelegation,
+            customRuntime
         } = layerInfo[lang]
-        const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
-
+        
         let skipHandlerDelegation = false
-
-        if (func.handler === thundraHandlerName) {
-            if (delegatedHandler) {
-                if (delegatedHandler === thundraHandlerName) {
-                    this.warnDelegatedHandlerSameWithThundraHandler(funcName)
-                    return
+        const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
+        
+        if (needHandlerDelegation) {
+            if (func.handler === thundraHandlerName) {
+                if (delegatedHandler) {
+                    if (delegatedHandler === thundraHandlerName) {
+                        this.warnDelegatedHandlerSameWithThundraHandler(funcName)
+                        return
+                    } else {
+                        skipHandlerDelegation = true
+                    }
                 } else {
-                    skipHandlerDelegation = true
+                    this.warnNoDelegatedHandler(funcName)
+                    return
                 }
             } else {
-                this.warnNoDelegatedHandler(funcName)
-                return
-            }
-        } else {
-            if (delegatedHandler) {
-                if (delegatedHandler === thundraHandlerName) {
-                    this.warnDelegatedHandlerSameWithThundraHandler(funcName)
-                } else {
-                    this.warnDelegatedHandlerWillBeOverwritten(funcName)
+                if (delegatedHandler) {
+                    if (delegatedHandler === thundraHandlerName) {
+                        this.warnDelegatedHandlerSameWithThundraHandler(funcName)
+                    } else {
+                        this.warnDelegatedHandlerWillBeOverwritten(funcName)
+                    }
                 }
             }
         }
@@ -296,11 +312,17 @@ class ServerlessThundraPlugin {
             return
         }
 
-        if (!skipHandlerDelegation) {
-            func.environment[delegatedHandlerEnvVarName] = func.handler
-            func.handler = thundraHandlerName
-        } else {
-            this.warnHandlerDelegationSkipped(funcName)
+        if (needHandlerDelegation) {
+            if (!skipHandlerDelegation) {
+                func.environment[delegatedHandlerEnvVarName] = func.handler
+                func.handler = thundraHandlerName
+            } else {
+                this.warnHandlerDelegationSkipped(funcName)
+            }
+        }
+
+        if (customRuntime) {
+            func.runtime = 'provided'
         }
 
         if (!skipLayerAddition) {
