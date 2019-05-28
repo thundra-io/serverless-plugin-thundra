@@ -180,7 +180,7 @@ class ServerlessThundraPlugin {
 
                 if (language == 'python') {
                     let method = _.get(func, 'custom.thundra.mode')
-                            ||  _.get(this.serverless.service, 'custom.python.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.python.mode')
                             ||  _.get(this.serverless.service, 'custom.thundra.mode')
                             || 'layer'
                     if (method === 'layer') {
@@ -195,7 +195,7 @@ class ServerlessThundraPlugin {
                     }
                 } else if (language == 'node') {
                     let method = _.get(func, 'custom.thundra.mode')
-                            ||  _.get(this.serverless.service, 'custom.node.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.node.mode')
                             ||  _.get(this.serverless.service, 'custom.thundra.mode')
                             || 'layer'
                     if (method === 'layer') {
@@ -215,7 +215,7 @@ class ServerlessThundraPlugin {
                     }
                 } else if (language == 'java8') {
                     let method = _.get(func, 'custom.thundra.mode')
-                            ||  _.get(this.serverless.service, 'custom.java.thundra.mode')
+                            ||  _.get(this.serverless.service, 'custom.thundra.java.mode')
                             ||  _.get(this.serverless.service, 'custom.thundra.mode')
                             ||  'layer'
                     if (method === 'layer') {
@@ -462,7 +462,7 @@ class ServerlessThundraPlugin {
         this.funcs.forEach(func => {
             _.set(
                 this.serverless.service.functions,
-                `${func.key}.handler`,
+                `${func.funcName}.handler`,
                 join(
                     this.config.thundraHandlerDir,
                     `${func.thundraHandler}.${func.method}`
