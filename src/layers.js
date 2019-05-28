@@ -2,7 +2,8 @@ exports.layerInfo = {
     java: {
         layerName: 'thundra-lambda-java-layer',
         defaultLayerVersion: '14',
-        thundraHandlerName: 'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
+        thundraHandlerName:
+            'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
         needHandlerDelegation: true,
     },
     python: {
@@ -15,21 +16,22 @@ exports.layerInfo = {
         layerName: 'thundra-lambda-node-layer',
         defaultLayerVersion: '11',
         needHandlerDelegation: false,
-        customRuntime: true
+        customRuntime: true,
     },
     layerAwsAccountNo: 269863060030,
     delegatedHandlerEnvVarName: 'thundra_agent_lambda_handler',
 }
 
 exports.getLayerARN = function(region, accountNo, name, version) {
-    return 'arn:aws:lambda:' +
-            region +
-            ':' +
-            accountNo +
-            ':' +
-            'layer:' +
-            name +
-            ':' +
-            version
-        
+    return (
+        'arn:aws:lambda:' +
+        region +
+        ':' +
+        accountNo +
+        ':' +
+        'layer:' +
+        name +
+        ':' +
+        version
+    )
 }
