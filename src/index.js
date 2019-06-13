@@ -6,7 +6,7 @@ const {
     generateWrapperCode,
     generateWrapperExt,
 } = require('./handlers')
-
+const { layerInfo, getLayerARN } = require('./layers')
 const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the python Thundra's library
@@ -149,8 +149,14 @@ class ServerlessThundraPlugin {
         for (const key in slsFunctions) {
             if (slsFunctions.hasOwnProperty(key)) {
                 const func = slsFunctions[key]
+                const funcName = key
                 const runtime =
                     func.runtime || this.serverless.service.provider.runtime
+
+                if (_.get(func, 'custom.thundra.disable', false)) {
+                    this.warnThundraDisabled(funcName)
+                    continue
+                }
 
                 if (!_.isString(runtime)) {
                     continue
@@ -159,7 +165,7 @@ class ServerlessThundraPlugin {
                 const language = AGENT_LANGS.find(lang => runtime.match(lang))
                 if (!language) {
                     this.log(
-                        `Thundra does not support "${runtime}" at the moment, skipping function ${key}`
+                        `Thundra does not support "${runtime}" at the moment, skipping function ${funcName}`
                     )
                     continue
                 }
@@ -169,175 +175,269 @@ class ServerlessThundraPlugin {
                     : []
                 let relativePath = ''
                 let localThundraDir = ''
+
+                func.environment = func.environment || {}
+                func.layers = func.layers || []
+
                 if (language == 'python') {
-                    relativePath = handler.slice(0, -1).join('.')
-                    relativePath = relativePath.replace(/\//g, '.')
+                    let method =
+                        _.get(func, 'custom.thundra.mode') ||
+                        _.get(
+                            this.serverless.service,
+                            'custom.thundra.python.mode'
+                        ) ||
+                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        'layer'
+                    if (method === 'layer') {
+                        this.addLayer(func, funcName, 'python')
+                        continue
+                    } else if (method === 'wrap') {
+                        relativePath = handler.slice(0, -1).join('.')
+                        relativePath = relativePath.replace(/\//g, '.')
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
+                    }
                 } else if (language == 'node') {
-                    relativePath = handler.slice(0, -1).join('.')
-                    let lastSlashIndex = relativePath.lastIndexOf('/')
-                    if (lastSlashIndex != -1) {
-                        localThundraDir =
-                            relativePath.slice(0, lastSlashIndex + 1) +
-                            'node_modules'
+                    let method =
+                        _.get(func, 'custom.thundra.mode') ||
+                        _.get(
+                            this.serverless.service,
+                            'custom.thundra.node.mode'
+                        ) ||
+                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        'layer'
+                    if (method === 'layer') {
+                        this.addLayer(func, funcName, 'node')
+                        continue
+                    } else if (method === 'wrap') {
+                        relativePath = handler.slice(0, -1).join('.')
+                        let lastSlashIndex = relativePath.lastIndexOf('/')
+                        if (lastSlashIndex != -1) {
+                            localThundraDir =
+                                relativePath.slice(0, lastSlashIndex + 1) +
+                                'node_modules'
+                        }
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
                     }
                 } else if (language == 'java8') {
-                    func.environment = func.environment || {}
-                    func.layers = func.layers || []
-
-                    const thundraHandlerName =
-                        'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler'
-                    const delegatedHandlerEnvVarName =
-                        'thundra_agent_lambda_handler'
-
-                    const delegatedHandler =
-                        func.environment[delegatedHandlerEnvVarName]
-                    var skipHandlerDelegation = false
-                    if (func.handler.includes('::')) {
-                        this.log(
-                            'Method specification for handler by "::" is not supported. ' +
-                                'So function ' +
-                                key +
-                                ' will not be wrapped!'
-                        )
-                        continue
-                    } else if (func.handler === thundraHandlerName) {
-                        if (delegatedHandler) {
-                            if (delegatedHandler === thundraHandlerName) {
-                                this.log(
-                                    'Handler to be delegated should be set to original handler, ' +
-                                        'not to the Thundra handler. So function ' +
-                                        key +
-                                        ' will not be wrapped!'
-                                )
-                                continue
-                            } else {
-                                skipHandlerDelegation = true
-                            }
-                        } else {
+                    let method =
+                        _.get(func, 'custom.thundra.mode') ||
+                        _.get(
+                            this.serverless.service,
+                            'custom.thundra.java.mode'
+                        ) ||
+                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        'layer'
+                    if (method === 'layer') {
+                        if (func.handler.includes('::')) {
                             this.log(
-                                'Handler was already set to the Thundra handler ' +
-                                    'but handler to be delegated was not specified. ' +
-                                    'In this case, there is no way to get original handler to be delegated. ' +
+                                'Method specification for handler by "::" is not supported. ' +
                                     'So function ' +
-                                    key +
+                                    funcName +
                                     ' will not be wrapped!'
                             )
                             continue
                         }
-                    } else {
-                        if (delegatedHandler) {
-                            if (delegatedHandler === thundraHandlerName) {
-                                this.log(
-                                    'Handler to be delegated should be set to original handler, ' +
-                                        'not to the Thundra handler. Misconfiguration will be corrected ' +
-                                        'for function ' +
-                                        key
-                                )
-                            } else {
-                                this.log(
-                                    'Handler to be delegated was already set, ' +
-                                        'but it will be overriten for function ' +
-                                        key
-                                )
-                            }
-                        }
-                    }
-
-                    var skipLayerAddition = false
-                    for (var layer of func.layers) {
-                        if (layer.includes('thundra-lambda-java-layer')) {
-                            skipLayerAddition = true
-                        }
-                    }
-
-                    if (func.layers.length >= 5 && !skipLayerAddition) {
+                        this.addLayer(func, funcName, 'java')
+                        continue
+                    } else if (method === 'wrap') {
                         this.log(
-                            'There are already ' +
-                                func.layers.length +
-                                ' layers as limit is 5, ' +
-                                'so cannot add Thundra layer to function ' +
-                                key +
-                                '!'
+                            'Code wrapping is not supported for java lambda functions. ' +
+                                "Please use 'layer' method instead."
                         )
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-
-                    if (!skipHandlerDelegation) {
-                        func.environment[delegatedHandlerEnvVarName] =
-                            func.handler
-                        func.handler = thundraHandlerName
-                    } else {
-                        this.log(
-                            'Thundra handler was already set and delegated to original handler, ' +
-                                'so no change will be applied to function ' +
-                                key +
-                                ' for handler'
-                        )
-                    }
-
-                    if (!skipLayerAddition) {
-                        const layerVersionPropName =
-                            'custom.thundra.java.layer.version'
-                        const layerRegion = this.serverless.service.provider
-                            .region
-                        const layerAwsAccountNo = 269863060030
-                        const layerName = 'thundra-lambda-java-layer'
-                        const defaultLayerVersion = '14'
-                        const globalLayerVersion = _.get(
-                            this.serverless.service,
-                            layerVersionPropName
-                        )
-                        const funcLayerVersion = _.get(
-                            func,
-                            layerVersionPropName
-                        )
-                        const layerVersion = funcLayerVersion
-                            ? funcLayerVersion
-                            : globalLayerVersion
-                            ? globalLayerVersion
-                            : defaultLayerVersion
-                        const layerArn =
-                            'arn:aws:lambda:' +
-                            layerRegion +
-                            ':' +
-                            layerAwsAccountNo +
-                            ':' +
-                            'layer:' +
-                            layerName +
-                            ':' +
-                            layerVersion
-                        func.layers.push(layerArn)
-                    } else {
-                        this.log(
-                            'Thundra layer is already added, so no layer will be added to function ' +
-                                key
-                        )
-                    }
-
-                    continue
                 }
 
-                if (_.get(func, 'custom.thundra.disable', false)) {
-                    this.log(
-                        `Automatic wrapping is disabled for function ${key}, skipping.`
-                    )
-                    continue
-                } else {
-                    funcs.push(
-                        Object.assign(func, {
-                            method: _.last(handler),
-                            key,
-                            relativePath,
-                            language,
-                            localThundraDir,
-                            thundraHandler: `${key}-thundra`,
-                        })
-                    )
-                }
+                funcs.push(
+                    Object.assign(func, {
+                        method: _.last(handler),
+                        funcName,
+                        relativePath,
+                        language,
+                        localThundraDir,
+                        thundraHandler: `${funcName}-thundra`,
+                    })
+                )
             }
         }
 
         return funcs
+    }
+
+    addLayer(func, funcName, lang) {
+        if (!lang in layerInfo) {
+            this.warnNoLayerInfoExistsForLang(lang)
+        }
+        const { delegatedHandlerEnvVarName, layerAwsAccountNo } = layerInfo
+        const {
+            layerName,
+            defaultLayerVersion,
+            thundraHandlerName,
+            needHandlerDelegation,
+            customRuntime,
+        } = layerInfo[lang]
+
+        let skipHandlerDelegation = false
+        const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
+
+        if (needHandlerDelegation) {
+            if (func.handler === thundraHandlerName) {
+                if (delegatedHandler) {
+                    if (delegatedHandler === thundraHandlerName) {
+                        this.warnDelegatedHandlerSameWithThundraHandler(
+                            funcName
+                        )
+                        return
+                    } else {
+                        skipHandlerDelegation = true
+                    }
+                } else {
+                    this.warnNoDelegatedHandler(funcName)
+                    return
+                }
+            } else {
+                if (delegatedHandler) {
+                    if (delegatedHandler === thundraHandlerName) {
+                        this.warnDelegatedHandlerSameWithThundraHandler(
+                            funcName
+                        )
+                    } else {
+                        this.warnDelegatedHandlerWillBeOverwritten(funcName)
+                    }
+                }
+            }
+        }
+
+        var skipLayerAddition = false
+        for (var layer of func.layers) {
+            if (layer.includes(layerName)) {
+                skipLayerAddition = true
+            }
+        }
+
+        if (func.layers.length >= 5 && !skipLayerAddition) {
+            this.warnLayerLimitReached(funcName, func.layers.length)
+            return
+        }
+
+        if (needHandlerDelegation) {
+            if (!skipHandlerDelegation) {
+                func.environment[delegatedHandlerEnvVarName] = func.handler
+                func.handler = thundraHandlerName
+            } else {
+                this.warnHandlerDelegationSkipped(funcName)
+            }
+        }
+
+        if (customRuntime) {
+            func.runtime = 'provided'
+        }
+
+        if (!skipLayerAddition) {
+            const layerRegion = this.serverless.service.provider.region
+            const globalLayerVersion = _.get(
+                this.serverless.service,
+                'custom.thundra.layer.version'
+            )
+            const globalLangLayerVersion = _.get(
+                this.serverless.service,
+                `custom.thundra.${lang}.layer.version`
+            )
+            const funcLayerVersion = _.get(func, `custom.thundra.layer.version`)
+            const layerVersion =
+                funcLayerVersion ||
+                globalLangLayerVersion ||
+                globalLayerVersion ||
+                defaultLayerVersion
+            const layerARN = getLayerARN(
+                layerRegion,
+                layerAwsAccountNo,
+                layerName,
+                layerVersion
+            )
+
+            func.layers.push(layerARN)
+        } else {
+            this.warnLayerAlreadyExists(funcName)
+        }
+    }
+
+    warnThundraDisabled(funcName) {
+        this.log(
+            `Thundra integration is disabled for function ${funcName}, skipping.`
+        )
+    }
+
+    warnMethodNotSupported(funcName, method) {
+        this.log(
+            `Given method '${method}' for function with the name '${funcName}' is not a valid method ` +
+                "please use one of the followings: 'layer', 'wrap'. Skipping..."
+        )
+    }
+
+    warnLayerAlreadyExists(funcName) {
+        this.log(
+            'Thundra layer is already added, so no layer will be added to function ' +
+                funcName
+        )
+    }
+
+    warnNoLayerInfoExistsForLang(lang) {
+        this.log('No layer information exist for given lang: ' + lang)
+    }
+
+    warnHandlerDelegationSkipped(funcName) {
+        this.log(
+            'Thundra handler was already set and delegated to original handler, ' +
+                'so no change will be applied to function ' +
+                funcName +
+                ' for handler'
+        )
+    }
+
+    warnDelegatedHandlerWillBeOverwritten(funcName) {
+        this.log(
+            'Handler to be delegated was already set, ' +
+                'but it will be overwriten for function ' +
+                funcName
+        )
+    }
+
+    warnLayerLimitReached(funcName, layerCount) {
+        this.log(
+            'There are already ' +
+                layerCount +
+                ' layers as limit is 5, ' +
+                'so cannot add Thundra layer to function ' +
+                funcName +
+                '!'
+        )
+    }
+
+    warnDelegatedHandlerSameWithThundraHandler(funcName) {
+        this.log(
+            'Handler to be delegated should be set to original handler, ' +
+                'not to the Thundra handler. So function ' +
+                funcName +
+                ' will not be wrapped!'
+        )
+    }
+
+    warnNoDelegatedHandler(funcName) {
+        this.log(
+            'Handler was already set to the Thundra handler ' +
+                'but handler to be delegated was not specified. ' +
+                'In this case, there is no way to get original handler to be delegated. ' +
+                'So function ' +
+                funcName +
+                ' will not be wrapped!'
+        )
     }
 
     /**
@@ -371,7 +471,7 @@ class ServerlessThundraPlugin {
         this.funcs.forEach(func => {
             _.set(
                 this.serverless.service.functions,
-                `${func.key}.handler`,
+                `${func.funcName}.handler`,
                 join(
                     this.config.thundraHandlerDir,
                     `${func.thundraHandler}.${func.method}`
