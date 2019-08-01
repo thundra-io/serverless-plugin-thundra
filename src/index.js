@@ -177,7 +177,7 @@ class ServerlessThundraPlugin {
                 let localThundraDir = ''
 
                 func.environment = func.environment || {}
-                func.layers = func.layers || []
+                func.layers = func.layers || this.serverless.service.provider.layers || []
 
                 if (language == 'python') {
                     let method =
