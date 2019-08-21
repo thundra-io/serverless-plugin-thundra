@@ -316,7 +316,7 @@ class ServerlessThundraPlugin {
 
         var skipLayerAddition = false
         for (var layer of func.layers) {
-            if (layer.includes(layerName)) {
+            if (typeof layer === 'string' && layer.includes(layerName)) {
                 skipLayerAddition = true
             }
         }
