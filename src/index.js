@@ -109,23 +109,14 @@ class ServerlessThundraPlugin {
         this.config = this.getConfig()
         if (this.checkIfWrap()) {
             this.log('Wrapping your functions with Thundra...')
-            this.getLatestLayerVersion(
-                this.serverless.service.provider.runtime,
-                this.serverless.service.provider.region
-            )
-                .then(response => {
-                    this.latestLayerArn =
-                        response['latest'][0]['LatestMatchingVersion'][
-                            'LayerVersionArn'
-                        ]
-                })
-                .catch(err => console.log(err))
+            this.prepareResources()
                 .then(() => {
                     this.funcs = this.findFuncs()
                     this.libCheck()
                     this.generateHandlers()
                     this.assignHandlers()
                 })
+                .catch(err => console.log(err))
         } else {
             return
         }
@@ -383,6 +374,23 @@ class ServerlessThundraPlugin {
         } else {
             this.warnLayerAlreadyExists(funcName)
         }
+    }
+
+    prepareResources() {
+        return new Promise((resolve, reject) => {
+            this.getLatestLayerVersion(
+                this.serverless.service.provider.runtime,
+                this.serverless.service.provider.region
+            )
+                .then(response => {
+                    this.latestLayerArn =
+                        response['latest'][0]['LatestMatchingVersion'][
+                            'LayerVersionArn'
+                        ]
+                    resolve()
+                })
+                .catch(err => reject(err))
+        })
     }
 
     getLatestLayerVersion(runtime, region) {
