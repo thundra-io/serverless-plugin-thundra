@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const { join } = require('path')
 const _ = require('lodash')
+const axios = require('axios')
 const {
     AGENT_LANGS,
     generateWrapperCode,
@@ -108,10 +109,14 @@ class ServerlessThundraPlugin {
         this.config = this.getConfig()
         if (this.checkIfWrap()) {
             this.log('Wrapping your functions with Thundra...')
-            this.funcs = this.findFuncs()
-            this.libCheck()
-            this.generateHandlers()
-            this.assignHandlers()
+            this.prepareResources()
+                .then(() => {
+                    this.funcs = this.findFuncs()
+                    this.libCheck()
+                    this.generateHandlers()
+                    this.assignHandlers()
+                })
+                .catch(err => console.log(err))
         } else {
             return
         }
@@ -361,11 +366,45 @@ class ServerlessThundraPlugin {
                 layerName,
                 layerVersion
             )
-
-            func.layers.push(layerARN)
+            if (layerVersion === 'latest') {
+                func.layers.push(this.latestLayerArn)
+            } else {
+                func.layers.push(layerARN)
+            }
         } else {
             this.warnLayerAlreadyExists(funcName)
         }
+    }
+
+    prepareResources() {
+        return new Promise((resolve, reject) => {
+            this.getLatestLayerVersion(
+                this.serverless.service.provider.runtime,
+                this.serverless.service.provider.region
+            )
+                .then(response => {
+                    this.latestLayerArn =
+                        response['latest'][0]['LatestMatchingVersion'][
+                            'LayerVersionArn'
+                        ]
+                    resolve()
+                })
+                .catch(err => reject(err))
+        })
+    }
+
+    getLatestLayerVersion(runtime, region) {
+        const url = `https://layers.thundra.io/layers/${region}/${runtime}/latest`
+        return new Promise((resolve, reject) => {
+            axios
+                .get(url)
+                .then(response => {
+                    resolve(response.data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
     }
 
     warnThundraDisabled(funcName) {
