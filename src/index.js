@@ -117,8 +117,6 @@ class ServerlessThundraPlugin {
                     this.assignHandlers()
                 })
                 .catch(err => console.log(err))
-        } else {
-            return
         }
     }
 
