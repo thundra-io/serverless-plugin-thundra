@@ -117,8 +117,6 @@ class ServerlessThundraPlugin {
                     this.assignHandlers()
                 })
                 .catch(err => console.log(err))
-        } else {
-            return
         }
     }
 
@@ -149,7 +147,7 @@ class ServerlessThundraPlugin {
      * @return {Array} The functions to wrap.
      */
     findFuncs() {
-        let funcs = []
+        const funcs = []
         const slsFunctions = this.serverless.service.functions
         for (const key in slsFunctions) {
             if (slsFunctions.hasOwnProperty(key)) {
@@ -184,8 +182,8 @@ class ServerlessThundraPlugin {
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
-                if (language == 'python') {
-                    let method =
+                if (language === 'python') {
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,
@@ -203,8 +201,8 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                } else if (language == 'node') {
-                    let method =
+                } else if (language === 'node') {
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,
@@ -217,8 +215,8 @@ class ServerlessThundraPlugin {
                         continue
                     } else if (method === 'wrap') {
                         relativePath = handler.slice(0, -1).join('.')
-                        let lastSlashIndex = relativePath.lastIndexOf('/')
-                        if (lastSlashIndex != -1) {
+                        const lastSlashIndex = relativePath.lastIndexOf('/')
+                        if (lastSlashIndex !== -1) {
                             localThundraDir =
                                 relativePath.slice(0, lastSlashIndex + 1) +
                                 'node_modules'
@@ -227,8 +225,8 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                } else if (language == 'java8') {
-                    let method =
+                } else if (language === 'java8') {
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,
