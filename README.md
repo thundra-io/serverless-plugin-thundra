@@ -36,7 +36,7 @@ npm install @thundra/core --save
 After installing the respective Thundra agent and Thundra's serverless plugin with the `npm install serverless-plugin-thundra`. Add it to your serverless
 plugins by including itunder the `plugins` section of your '.yml' file.
 
-```bash
+```yaml
 plugins:
   - serverless-plugin-thundra
 ```
@@ -55,7 +55,7 @@ You can configure Thundra's serverless plugin to disable specific functions, or 
 You may disable Thundra's serverless plugin by using the `disable` variable under the `thundra` component which you added under `custom` when adding the plugin to
 your '.yml' file.
 
-```bash
+```yaml
 custom:
   thundra:
     disable: true
@@ -65,7 +65,7 @@ custom:
 
 You may disable automatic wrapping of specific functions by setting `disable` to `true`, under the `custom.thundra` for the function you want.
 
-```bash
+```yaml
 functions:
   hello-world-test:
     name: hello-world-test
@@ -83,14 +83,14 @@ By default, plugin searches for `@thundra/core` package in the following directo
 * The directory that is given as follows:
 
 **Globally**
-```bash
+```yaml
 custom:
   thundra:
     node_modules_path: <directory that contains @thundra/core>
 ```
 
 **Or per function:**
-```bash
+```yaml
 functions:
   hello-world-test:
     name: hello-world-test
@@ -107,7 +107,7 @@ dependencies are defined (this is particularly common with monorepo directory st
 where to look for the correct `package.json` file.
 
 This can be defined globally as follows:
-```bash
+```yaml
 custom:
   thundra:
     package_json_path: <directory that contains correct package.json>
@@ -120,7 +120,7 @@ By default, plugin uses default Java layer version of the plugin and it might be
 But it can be specified by configuration property in the yml file globally and/or function based.
 
 **Globally:**
-```bash
+```yaml
 custom:
   thundra:
     java:
@@ -129,7 +129,7 @@ custom:
 ```
 
 **For per function:**
-```bash
+```yaml
 functions:
   hello-world-test:
     name: hello-world-test
