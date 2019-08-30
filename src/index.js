@@ -182,7 +182,7 @@ class ServerlessThundraPlugin {
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
-                if (language == 'python') {
+                if (language === 'python') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
@@ -201,7 +201,7 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                } else if (language == 'node') {
+                } else if (language === 'node') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
@@ -216,7 +216,7 @@ class ServerlessThundraPlugin {
                     } else if (method === 'wrap') {
                         relativePath = handler.slice(0, -1).join('.')
                         const lastSlashIndex = relativePath.lastIndexOf('/')
-                        if (lastSlashIndex != -1) {
+                        if (lastSlashIndex !== -1) {
                             localThundraDir =
                                 relativePath.slice(0, lastSlashIndex + 1) +
                                 'node_modules'
@@ -225,7 +225,7 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                } else if (language == 'java8') {
+                } else if (language === 'java8') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
