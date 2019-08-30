@@ -149,7 +149,7 @@ class ServerlessThundraPlugin {
      * @return {Array} The functions to wrap.
      */
     findFuncs() {
-        let funcs = []
+        const funcs = []
         const slsFunctions = this.serverless.service.functions
         for (const key in slsFunctions) {
             if (slsFunctions.hasOwnProperty(key)) {
@@ -185,7 +185,7 @@ class ServerlessThundraPlugin {
                 func.layers = func.layers || []
 
                 if (language == 'python') {
-                    let method =
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,
@@ -204,7 +204,7 @@ class ServerlessThundraPlugin {
                         continue
                     }
                 } else if (language == 'node') {
-                    let method =
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,
@@ -217,7 +217,7 @@ class ServerlessThundraPlugin {
                         continue
                     } else if (method === 'wrap') {
                         relativePath = handler.slice(0, -1).join('.')
-                        let lastSlashIndex = relativePath.lastIndexOf('/')
+                        const lastSlashIndex = relativePath.lastIndexOf('/')
                         if (lastSlashIndex != -1) {
                             localThundraDir =
                                 relativePath.slice(0, lastSlashIndex + 1) +
@@ -228,7 +228,7 @@ class ServerlessThundraPlugin {
                         continue
                     }
                 } else if (language == 'java8') {
-                    let method =
+                    const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
                             this.serverless.service,

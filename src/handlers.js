@@ -49,7 +49,7 @@ exports.generateWrapperExt = function(func) {
  * @return {String} The wrapper code.
  */
 exports.generateWrapperCode = function(func, config) {
-    let customNodePath =
+    const customNodePath =
         _.get(func, 'custom.thundra.node_modules_path') ||
         config.node_modules_path ||
         ''
