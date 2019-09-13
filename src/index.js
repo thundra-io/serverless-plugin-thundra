@@ -151,10 +151,13 @@ class ServerlessThundraPlugin {
         const slsFunctions = this.serverless.service.functions
         for (const key in slsFunctions) {
             if (slsFunctions.hasOwnProperty(key)) {
+                const { service } = this.serverless;
+                const { provider = {}  } = service;
+                const { layers } = provider;
                 const func = slsFunctions[key]
                 const funcName = key
                 const runtime =
-                    func.runtime || this.serverless.service.provider.runtime
+                    func.runtime || provider.runtime
 
                 if (_.get(func, 'custom.thundra.disable', false)) {
                     this.warnThundraDisabled(funcName)
@@ -182,14 +185,22 @@ class ServerlessThundraPlugin {
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
+                if(Array.isArray(layers)) {
+                    for(let layer of layers){
+                        if(!func.layers.includes(layer)){
+                            func.layers.push(layer)
+                        }
+                    }
+                }
+
                 if (language === 'python') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
-                            this.serverless.service,
+                            service,
                             'custom.thundra.python.mode'
                         ) ||
-                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         this.addLayer(func, funcName, 'python')
@@ -205,10 +216,10 @@ class ServerlessThundraPlugin {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
-                            this.serverless.service,
+                            service,
                             'custom.thundra.node.mode'
                         ) ||
-                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         this.addLayer(func, funcName, 'node')
@@ -229,10 +240,10 @@ class ServerlessThundraPlugin {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
                         _.get(
-                            this.serverless.service,
+                            service,
                             'custom.thundra.java.mode'
                         ) ||
-                        _.get(this.serverless.service, 'custom.thundra.mode') ||
+                        _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         if (func.handler.includes('::')) {
