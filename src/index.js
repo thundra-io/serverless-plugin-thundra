@@ -1,7 +1,9 @@
-const fs = require('fs-extra')
+const fs = require('fs')
 const { join } = require('path')
 const _ = require('lodash')
 const axios = require('axios')
+const rimraf = require('rimraf')
+const BbPromise = require('bluebird');
 const {
     AGENT_LANGS,
     generateWrapperCode,
@@ -23,10 +25,11 @@ const VALIDATE_LIB_BY_LANG = {
     node() {
         let pack
         try {
-            pack = fs.readJsonSync(join(this.prefix, 'package.json'))
+            pack = JSON.parse(fs.readFileSync(join(this.prefix, 'package.json'), 'utf8'))
         } catch (err) {
             this.log(
-                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!'
+                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!:',
+                err
             )
             return
         }
@@ -46,6 +49,7 @@ const VALIDATE_LIB_BY_LANG = {
         )
     },
 }
+
 /**
  * Thundra's serverless plugin.
  */
@@ -79,14 +83,14 @@ class ServerlessThundraPlugin {
         }
 
         this.hooks = {
-            'before:package:createDeploymentArtifacts': this.run.bind(this),
-            'before:deploy:function:packageFunction': this.run.bind(this),
-            'before:invoke:local:invoke': this.run.bind(this),
-            'before:offline:start:init': this.run.bind(this),
-            'before:step-functions-offline:start': this.run.bind(this),
-            'after:package:createDeploymentArtifacts': this.cleanup.bind(this),
-            'after:invoke:local:invoke': this.cleanup.bind(this),
-            'thundra:clean:init': this.cleanup.bind(this),
+            'before:package:createDeploymentArtifacts': () => BbPromise.bind(this).then(this.run),
+            'before:deploy:function:packageFunction': () => BbPromise.bind(this).then(this.run),
+            'before:invoke:local:invoke': () => BbPromise.bind(this).then(this.run),
+            'before:offline:start:init': () => BbPromise.bind(this).then(this.run),
+            'before:step-functions-offline:start': () => BbPromise.bind(this).then(this.run),
+            'after:package:createDeploymentArtifacts': () => BbPromise.bind(this).then(this.cleanup),
+            'after:invoke:local:invoke': () => BbPromise.bind(this).then(this.cleanup),
+            'thundra:clean:init': () => BbPromise.bind(this).then(this.cleanup),
         }
     }
 
@@ -106,18 +110,21 @@ class ServerlessThundraPlugin {
      * Wraps function handlers with Thundra
      */
     run() {
-        this.config = this.getConfig()
-        if (this.checkIfWrap()) {
-            this.log('Wrapping your functions with Thundra...')
-            this.prepareResources()
-                .then(() => {
+        return BbPromise.fromCallback(cb => {
+            this.config = this.getConfig()
+            this.prepareResources().then(() => {
+                if (this.checkIfWrap()) {
+                    this.log('Wrapping your functions with Thundra...')
                     this.funcs = this.findFuncs()
                     this.libCheck()
                     this.generateHandlers()
                     this.assignHandlers()
-                })
-                .catch(err => console.log(err))
-        }
+                    cb()
+                } else {
+                    cb()
+                }
+            })
+        })
     }
 
     /**
@@ -151,13 +158,12 @@ class ServerlessThundraPlugin {
         const slsFunctions = this.serverless.service.functions
         for (const key in slsFunctions) {
             if (slsFunctions.hasOwnProperty(key)) {
-                const { service } = this.serverless;
-                const { provider = {}  } = service;
-                const { layers } = provider;
+                const { service } = this.serverless
+                const { provider = {} } = service
+                const { layers } = provider
                 const func = slsFunctions[key]
                 const funcName = key
-                const runtime =
-                    func.runtime || provider.runtime
+                const runtime = func.runtime || provider.runtime
 
                 if (_.get(func, 'custom.thundra.disable', false)) {
                     this.warnThundraDisabled(funcName)
@@ -185,9 +191,9 @@ class ServerlessThundraPlugin {
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
-                if(Array.isArray(layers)) {
-                    for(let layer of layers){
-                        if(!func.layers.includes(layer)){
+                if (Array.isArray(layers)) {
+                    for (let layer of layers) {
+                        if (!func.layers.includes(layer)) {
                             func.layers.push(layer)
                         }
                     }
@@ -196,10 +202,7 @@ class ServerlessThundraPlugin {
                 if (language === 'python') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
-                        _.get(
-                            service,
-                            'custom.thundra.python.mode'
-                        ) ||
+                        _.get(service, 'custom.thundra.python.mode') ||
                         _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
@@ -215,10 +218,7 @@ class ServerlessThundraPlugin {
                 } else if (language === 'node') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
-                        _.get(
-                            service,
-                            'custom.thundra.node.mode'
-                        ) ||
+                        _.get(service, 'custom.thundra.node.mode') ||
                         _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
@@ -239,10 +239,7 @@ class ServerlessThundraPlugin {
                 } else if (language === 'java8') {
                     const method =
                         _.get(func, 'custom.thundra.mode') ||
-                        _.get(
-                            service,
-                            'custom.thundra.java.mode'
-                        ) ||
+                        _.get(service, 'custom.thundra.java.mode') ||
                         _.get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
@@ -280,7 +277,6 @@ class ServerlessThundraPlugin {
                 )
             }
         }
-
         return funcs
     }
 
@@ -387,18 +383,24 @@ class ServerlessThundraPlugin {
 
     prepareResources() {
         return new Promise((resolve, reject) => {
+            const runtime = _.get(this, 'serverless.service.provider.runtime')
+            const region = _.get(this, 'serverless.service.provider.region')
             this.getLatestLayerVersion(
-                this.serverless.service.provider.runtime,
-                this.serverless.service.provider.region
+                runtime,
+                region,
             )
                 .then(response => {
                     this.latestLayerArn =
-                        response['latest'][0]['LatestMatchingVersion'][
-                            'LayerVersionArn'
-                        ]
-                    resolve()
+                        _.get(response, 'latest.[0].LatestMatchingVersion.LayerVersionArn')
+                    if (this.latestLayerArn) {
+                        resolve()
+                    } else {
+                        reject(new Error(
+                            `Thundra layer is not supported yet for the given runtime and region pair: (${runtime}, ${region})`
+                        ))
+                    }
                 })
-                .catch(err => reject(err))
+                .catch(err => reject(Error(`Given runtime and region pair is not valid for Thundra layers: (${runtime}, ${region})`)))
         })
     }
 
@@ -545,10 +547,10 @@ class ServerlessThundraPlugin {
      * Cleaning Thundra's handlers
      */
     cleanup() {
-        this.log("Cleaning up Thundra's handlers")
-        fs.removeSync(
-            join(this.originalServicePath, this.config.thundraHandlerDir)
-        )
+        return BbPromise.fromCallback(cb => {
+            this.log("Cleaning up Thundra's handlers")
+            rimraf(join(this.originalServicePath, this.config.thundraHandlerDir), cb)
+        })
     }
 }
 
