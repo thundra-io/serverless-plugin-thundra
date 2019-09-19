@@ -25,6 +25,7 @@
     "bluebird": "^3.5.5",
     "lodash": "^4.17.11",
     "path": "^0.12.7",
+    "rimraf": "^3.0.0",
     "util": "^0.11.1"
   },
   "devDependencies": {
