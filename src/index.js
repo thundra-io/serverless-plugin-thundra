@@ -3,6 +3,7 @@ const { join } = require('path')
 const _ = require('lodash')
 const axios = require('axios')
 const { removeDir } = require('./util')
+const BbPromise = require('bluebird');
 const {
     AGENT_LANGS,
     generateWrapperCode,
@@ -15,7 +16,7 @@ const VALIDATE_LIB_BY_LANG = {
      */
     python() {
         this.log(
-            'Please ensure that all necessary Thundra Python agents are installed',
+            'Please ensure that all necessary Thundra Python agents are installed'
         )
     },
     /**
@@ -27,14 +28,14 @@ const VALIDATE_LIB_BY_LANG = {
             pack = fs.readJsonSync(join(this.prefix, 'package.json'))
         } catch (err) {
             this.log(
-                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!',
+                'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!'
             )
             return
         }
         const { dependencies = [] } = pack
         if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
             throw new Error(
-                'Thundra\'s Node library must be installed in order to use this plugin!',
+                "Thundra's Node library must be installed in order to use this plugin!"
             )
         }
     },
@@ -43,7 +44,7 @@ const VALIDATE_LIB_BY_LANG = {
      */
     java8() {
         this.log(
-            'Please ensure that all necessary Thundra Java agents are installed',
+            'Please ensure that all necessary Thundra Java agents are installed'
         )
     },
 }
@@ -81,12 +82,11 @@ class ServerlessThundraPlugin {
         }
 
         this.hooks = {
-            'before:package:createDeploymentArtifacts': this.run.bind(this),
-            'before:deploy:function:packageFunction': this.run.bind(this),
-            'before:invoke:local:invoke': this.run.bind(this),
-            'before:offline:start:init': this.run.bind(this),
-            'before:step-functions-offline:start': this.run.bind(this),
-            'thundra:clean:init': this.cleanup.bind(this),
+            'before:package:createDeploymentArtifacts': () => BbPromise.bind(this).then(this.run),
+            'before:deploy:function:packageFunction': () => BbPromise.bind(this).then(this.run),
+            'before:invoke:local:invoke': () => BbPromise.bind(this).then(this.run),
+            'before:offline:start:init': () => BbPromise.bind(this).then(this.run),
+            'before:step-functions-offline:start': () => BbPromise.bind(this).then(this.run),
         }
     }
 
@@ -98,7 +98,7 @@ class ServerlessThundraPlugin {
     log(format, ...args) {
         this.serverless.cli.log(
             `[serverless-plugin-thundra] ${format}`,
-            ...args,
+            ...args
         )
     }
 
@@ -106,18 +106,20 @@ class ServerlessThundraPlugin {
      * Wraps function handlers with Thundra
      */
     run() {
-        this.config = this.getConfig()
-        if (this.checkIfWrap()) {
-            this.log('Wrapping your functions with Thundra...')
-            this.prepareResources()
-                .then(() => {
-                    this.funcs = this.findFuncs()
-                    this.libCheck()
-                    this.generateHandlers()
-                    this.assignHandlers()
-                    this.cleanup()
-                }).catch(e => console.log(e))
-        }
+        return BbPromise.fromCallback(cb => {
+            this.config = this.getConfig()
+            if (this.checkIfWrap()) {
+                this.log('Wrapping your functions with Thundra...')
+                this.funcs = this.findFuncs()
+                this.libCheck()
+                this.generateHandlers()
+                this.assignHandlers()
+                this.cleanup()
+                cb()
+            } else {
+                cb()
+            }
+        })
     }
 
     /**
@@ -170,7 +172,7 @@ class ServerlessThundraPlugin {
                 const language = AGENT_LANGS.find(lang => runtime.match(lang))
                 if (!language) {
                     this.log(
-                        `Thundra does not support "${runtime}" at the moment, skipping function ${funcName}`,
+                        `Thundra does not support "${runtime}" at the moment, skipping function ${funcName}`
                     )
                     continue
                 }
@@ -239,9 +241,9 @@ class ServerlessThundraPlugin {
                         if (func.handler.includes('::')) {
                             this.log(
                                 'Method specification for handler by "::" is not supported. ' +
-                                'So function ' +
-                                funcName +
-                                ' will not be wrapped!',
+                                    'So function ' +
+                                    funcName +
+                                    ' will not be wrapped!'
                             )
                             continue
                         }
@@ -250,7 +252,7 @@ class ServerlessThundraPlugin {
                     } else if (method === 'wrap') {
                         this.log(
                             'Code wrapping is not supported for java lambda functions. ' +
-                            'Please use \'layer\' method instead.',
+                                "Please use 'layer' method instead."
                         )
                     } else {
                         this.warnMethodNotSupported(funcName, method)
@@ -266,11 +268,10 @@ class ServerlessThundraPlugin {
                         language,
                         localThundraDir,
                         thundraHandler: `${funcName}-thundra`,
-                    }),
+                    })
                 )
             }
         }
-
         return funcs
     }
 
@@ -295,7 +296,7 @@ class ServerlessThundraPlugin {
                 if (delegatedHandler) {
                     if (delegatedHandler === thundraHandlerName) {
                         this.warnDelegatedHandlerSameWithThundraHandler(
-                            funcName,
+                            funcName
                         )
                         return
                     } else {
@@ -309,7 +310,7 @@ class ServerlessThundraPlugin {
                 if (delegatedHandler) {
                     if (delegatedHandler === thundraHandlerName) {
                         this.warnDelegatedHandlerSameWithThundraHandler(
-                            funcName,
+                            funcName
                         )
                     } else {
                         this.warnDelegatedHandlerWillBeOverwritten(funcName)
@@ -347,11 +348,11 @@ class ServerlessThundraPlugin {
             const layerRegion = this.serverless.service.provider.region
             const globalLayerVersion = _.get(
                 this.serverless.service,
-                'custom.thundra.layer.version',
+                'custom.thundra.layer.version'
             )
             const globalLangLayerVersion = _.get(
                 this.serverless.service,
-                `custom.thundra.${lang}.layer.version`,
+                `custom.thundra.${lang}.layer.version`
             )
             const funcLayerVersion = _.get(func, `custom.thundra.layer.version`)
             const layerVersion =
@@ -363,7 +364,7 @@ class ServerlessThundraPlugin {
                 layerRegion,
                 layerAwsAccountNo,
                 layerName,
-                layerVersion,
+                layerVersion
             )
             if (layerVersion === 'latest') {
                 func.layers.push(this.latestLayerArn)
@@ -379,13 +380,13 @@ class ServerlessThundraPlugin {
         return new Promise((resolve, reject) => {
             this.getLatestLayerVersion(
                 this.serverless.service.provider.runtime,
-                this.serverless.service.provider.region,
+                this.serverless.service.provider.region
             )
                 .then(response => {
                     this.latestLayerArn =
                         response['latest'][0]['LatestMatchingVersion'][
                             'LayerVersionArn'
-                            ]
+                        ]
                     resolve()
                 })
                 .catch(err => reject(err))
@@ -408,21 +409,21 @@ class ServerlessThundraPlugin {
 
     warnThundraDisabled(funcName) {
         this.log(
-            `Thundra integration is disabled for function ${funcName}, skipping.`,
+            `Thundra integration is disabled for function ${funcName}, skipping.`
         )
     }
 
     warnMethodNotSupported(funcName, method) {
         this.log(
             `Given method '${method}' for function with the name '${funcName}' is not a valid method ` +
-            'please use one of the followings: \'layer\', \'wrap\'. Skipping...',
+                "please use one of the followings: 'layer', 'wrap'. Skipping..."
         )
     }
 
     warnLayerAlreadyExists(funcName) {
         this.log(
             'Thundra layer is already added, so no layer will be added to function ' +
-            funcName,
+                funcName
         )
     }
 
@@ -433,48 +434,48 @@ class ServerlessThundraPlugin {
     warnHandlerDelegationSkipped(funcName) {
         this.log(
             'Thundra handler was already set and delegated to original handler, ' +
-            'so no change will be applied to function ' +
-            funcName +
-            ' for handler',
+                'so no change will be applied to function ' +
+                funcName +
+                ' for handler'
         )
     }
 
     warnDelegatedHandlerWillBeOverwritten(funcName) {
         this.log(
             'Handler to be delegated was already set, ' +
-            'but it will be overwriten for function ' +
-            funcName,
+                'but it will be overwriten for function ' +
+                funcName
         )
     }
 
     warnLayerLimitReached(funcName, layerCount) {
         this.log(
             'There are already ' +
-            layerCount +
-            ' layers as limit is 5, ' +
-            'so cannot add Thundra layer to function ' +
-            funcName +
-            '!',
+                layerCount +
+                ' layers as limit is 5, ' +
+                'so cannot add Thundra layer to function ' +
+                funcName +
+                '!'
         )
     }
 
     warnDelegatedHandlerSameWithThundraHandler(funcName) {
         this.log(
             'Handler to be delegated should be set to original handler, ' +
-            'not to the Thundra handler. So function ' +
-            funcName +
-            ' will not be wrapped!',
+                'not to the Thundra handler. So function ' +
+                funcName +
+                ' will not be wrapped!'
         )
     }
 
     warnNoDelegatedHandler(funcName) {
         this.log(
             'Handler was already set to the Thundra handler ' +
-            'but handler to be delegated was not specified. ' +
-            'In this case, there is no way to get original handler to be delegated. ' +
-            'So function ' +
-            funcName +
-            ' will not be wrapped!',
+                'but handler to be delegated was not specified. ' +
+                'In this case, there is no way to get original handler to be delegated. ' +
+                'So function ' +
+                funcName +
+                ' will not be wrapped!'
         )
     }
 
@@ -484,7 +485,7 @@ class ServerlessThundraPlugin {
     generateHandlers() {
         const handlersFullDirPath = join(
             this.originalServicePath,
-            this.config.thundraHandlerDir,
+            this.config.thundraHandlerDir
         )
         try {
             fs.mkdirSync(handlersFullDirPath)
@@ -497,7 +498,7 @@ class ServerlessThundraPlugin {
             const handlerCode = generateWrapperCode(func, this.config)
             fs.writeFileSync(
                 join(handlersFullDirPath, generateWrapperExt(func)),
-                handlerCode,
+                handlerCode
             )
         })
     }
@@ -512,8 +513,8 @@ class ServerlessThundraPlugin {
                 `${func.funcName}.handler`,
                 join(
                     this.config.thundraHandlerDir,
-                    `${func.thundraHandler}.${func.method}`,
-                ),
+                    `${func.thundraHandler}.${func.method}`
+                )
             )
         })
     }
@@ -527,7 +528,7 @@ class ServerlessThundraPlugin {
             {
                 thundraHandlerDir: 'thundra_handlers',
             },
-            (this.serverless.service.custom || {}).thundra || {},
+            (this.serverless.service.custom || {}).thundra || {}
         )
     }
 
@@ -535,13 +536,8 @@ class ServerlessThundraPlugin {
      * Cleaning Thundra's handlers
      */
     cleanup() {
-        this.log('Cleaning up Thundra\'s handlers')
-        removeDir(
-            join(
-                this.originalServicePath,
-                this.config.thundraHandlerDir,
-            )
-        )
+        this.log("Cleaning up Thundra's handlers")
+        removeDir(join(this.originalServicePath, this.config.thundraHandlerDir))
     }
 }
 
