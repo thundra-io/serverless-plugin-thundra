@@ -448,16 +448,16 @@ class ServerlessThundraPlugin {
                         for (let runtime of compatibleRuntimes) {
                             this.latestLayerArnMap[runtime] = arn
                         }
+                    }
 
-                        if (!_.isEmpty(this.latestLayerArnMap)) {
-                            resolve()
-                        } else {
-                            reject(
-                                new Error(
-                                    `Thundra layer is not supported yet for the given runtime and region pair`
-                                )
+                    if (!_.isEmpty(this.latestLayerArnMap)) {
+                        resolve()
+                    } else {
+                        reject(
+                            new Error(
+                                `Thundra layer is not supported yet for the given runtime and region pair`
                             )
-                        }
+                        )
                     }
                 })
                 .catch(err => {
