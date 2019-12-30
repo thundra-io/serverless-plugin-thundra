@@ -401,6 +401,8 @@ class ServerlessThundraPlugin {
     prepareResources() {
         return new Promise((resolve, reject) => {
             this.latestLayerArnMap = {}
+            const promiseMap = {}
+            const latestLayerPromises = []
             const providerRuntime = _.get(
                 this,
                 'serverless.service.provider.runtime'
@@ -410,12 +412,12 @@ class ServerlessThundraPlugin {
                 'serverless.service.provider.region'
             )
             const functions = _.get(this, 'serverless.service.functions')
-            const latestLayerPromises = []
 
             if (providerRuntime) {
                 latestLayerPromises.push(
                     this.getLatestLayerVersion(providerRuntime, providerRegion)
                 )
+                promiseMap[providerRuntime] = true
             }
 
             if (functions) {
@@ -423,13 +425,14 @@ class ServerlessThundraPlugin {
                     if (functions.hasOwnProperty(key)) {
                         const func = functions[key]
                         const runtime = _.get(func, 'runtime')
-                        if (runtime && !this.latestLayerArnMap[runtime]) {
+                        if (runtime && !promiseMap[runtime]) {
                             latestLayerPromises.push(
                                 this.getLatestLayerVersion(
                                     runtime,
                                     providerRegion
                                 )
                             )
+                            promiseMap[runtime] = true
                         }
                     }
                 }
