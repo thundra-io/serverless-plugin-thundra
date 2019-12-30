@@ -3,7 +3,7 @@ const { join } = require('path')
 const _ = require('lodash')
 const axios = require('axios')
 const rimraf = require('rimraf')
-const BbPromise = require('bluebird');
+const BbPromise = require('bluebird')
 const {
     AGENT_LANGS,
     generateWrapperCode,
@@ -25,7 +25,9 @@ const VALIDATE_LIB_BY_LANG = {
     node() {
         let pack
         try {
-            pack = JSON.parse(fs.readFileSync(join(this.prefix, 'package.json'), 'utf8'))
+            pack = JSON.parse(
+                fs.readFileSync(join(this.prefix, 'package.json'), 'utf8')
+            )
         } catch (err) {
             this.log(
                 'Could not read package.json. Skipping Thundra library validation - please make sure you have it installed!:',
@@ -83,13 +85,20 @@ class ServerlessThundraPlugin {
         }
 
         this.hooks = {
-            'before:package:createDeploymentArtifacts': () => BbPromise.bind(this).then(this.run),
-            'before:deploy:function:packageFunction': () => BbPromise.bind(this).then(this.run),
-            'before:invoke:local:invoke': () => BbPromise.bind(this).then(this.run),
-            'before:offline:start:init': () => BbPromise.bind(this).then(this.run),
-            'before:step-functions-offline:start': () => BbPromise.bind(this).then(this.run),
-            'after:package:createDeploymentArtifacts': () => BbPromise.bind(this).then(this.cleanup),
-            'after:invoke:local:invoke': () => BbPromise.bind(this).then(this.cleanup),
+            'before:package:createDeploymentArtifacts': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:deploy:function:packageFunction': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:invoke:local:invoke': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:offline:start:init': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:step-functions-offline:start': () =>
+                BbPromise.bind(this).then(this.run),
+            'after:package:createDeploymentArtifacts': () =>
+                BbPromise.bind(this).then(this.cleanup),
+            'after:invoke:local:invoke': () =>
+                BbPromise.bind(this).then(this.cleanup),
             'thundra:clean:init': () => BbPromise.bind(this).then(this.cleanup),
         }
     }
@@ -281,6 +290,14 @@ class ServerlessThundraPlugin {
     }
 
     addLayer(func, funcName, lang) {
+        const providerRuntime = _.get(
+            this,
+            'serverless.service.provider.runtime'
+        )
+        if (!func.runtime) {
+            func.runtime = providerRuntime
+        }
+
         if (!lang in layerInfo) {
             this.warnNoLayerInfoExistsForLang(lang)
         }
@@ -345,10 +362,6 @@ class ServerlessThundraPlugin {
             }
         }
 
-        if (customRuntime) {
-            func.runtime = 'provided'
-        }
-
         if (!skipLayerAddition) {
             const layerRegion = this.serverless.service.provider.region
             const globalLayerVersion = _.get(
@@ -372,35 +385,88 @@ class ServerlessThundraPlugin {
                 layerVersion
             )
             if (layerVersion === 'latest') {
-                func.layers.push(this.latestLayerArn)
+                func.layers.push(this.latestLayerArnMap[func.runtime])
             } else {
                 func.layers.push(layerARN)
             }
         } else {
             this.warnLayerAlreadyExists(funcName)
         }
+
+        if (customRuntime) {
+            func.runtime = 'provided'
+        }
     }
 
     prepareResources() {
         return new Promise((resolve, reject) => {
-            const runtime = _.get(this, 'serverless.service.provider.runtime')
-            const region = _.get(this, 'serverless.service.provider.region')
-            this.getLatestLayerVersion(
-                runtime,
-                region,
+            this.latestLayerArnMap = {}
+            const providerRuntime = _.get(
+                this,
+                'serverless.service.provider.runtime'
             )
+            const providerRegion = _.get(
+                this,
+                'serverless.service.provider.region'
+            )
+            const functions = _.get(this, 'serverless.service.functions')
+            const latestLayerPromises = []
+
+            if (providerRuntime) {
+                latestLayerPromises.push(
+                    this.getLatestLayerVersion(providerRuntime, providerRegion)
+                )
+            }
+
+            if (functions) {
+                for (const key in functions) {
+                    if (functions.hasOwnProperty(key)) {
+                        const func = functions[key]
+                        const runtime = _.get(func, 'runtime')
+                        if (runtime && !this.latestLayerArnMap[runtime]) {
+                            latestLayerPromises.push(
+                                this.getLatestLayerVersion(
+                                    runtime,
+                                    providerRegion
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            Promise.all(latestLayerPromises)
                 .then(response => {
-                    this.latestLayerArn =
-                        _.get(response, 'latest.[0].LatestMatchingVersion.LayerVersionArn')
-                    if (this.latestLayerArn) {
-                        resolve()
-                    } else {
-                        reject(new Error(
-                            `Thundra layer is not supported yet for the given runtime and region pair: (${runtime}, ${region})`
-                        ))
+                    for (let obj of response) {
+                        const compatibleRuntimes = _.get(
+                            obj,
+                            'latest.[0].LatestMatchingVersion.CompatibleRuntimes'
+                        )
+                        const arn = _.get(
+                            obj,
+                            'latest.[0].LatestMatchingVersion.LayerVersionArn'
+                        )
+                        for (let runtime of compatibleRuntimes) {
+                            this.latestLayerArnMap[runtime] = arn
+                        }
+
+                        if (!_.isEmpty(this.latestLayerArnMap)) {
+                            resolve()
+                        } else {
+                            reject(
+                                new Error(
+                                    `Thundra layer is not supported yet for the given runtime and region pair`
+                                )
+                            )
+                        }
                     }
                 })
-                .catch(err => reject(Error(`Given runtime and region pair is not valid for Thundra layers: (${runtime}, ${region})`)))
+                .catch(err => {
+                    reject(
+                        Error(
+                            `Given runtime and region pair is not valid for Thundra layers`
+                        )
+                    )
+                })
         })
     }
 
@@ -549,7 +615,10 @@ class ServerlessThundraPlugin {
     cleanup() {
         return BbPromise.fromCallback(cb => {
             this.log("Cleaning up Thundra's handlers")
-            rimraf(join(this.originalServicePath, this.config.thundraHandlerDir), cb)
+            rimraf(
+                join(this.originalServicePath, this.config.thundraHandlerDir),
+                cb
+            )
         })
     }
 }
