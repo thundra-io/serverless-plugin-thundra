@@ -1,20 +1,20 @@
 exports.layerInfo = {
     java: {
         layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '20',
+        defaultLayerVersion: '37',
         thundraHandlerName:
             'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
         needHandlerDelegation: true,
     },
     python: {
         layerName: 'thundra-lambda-python-layer',
-        defaultLayerVersion: '7',
+        defaultLayerVersion: '17',
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
     node: {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '12',
+        defaultLayerVersion: '32',
         needHandlerDelegation: false,
         customRuntime: true,
     },
