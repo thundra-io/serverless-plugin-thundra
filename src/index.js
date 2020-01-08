@@ -308,7 +308,10 @@ class ServerlessThundraPlugin {
             thundraHandlerName,
             needHandlerDelegation,
             customRuntime,
-        } = layerInfo[lang]
+        } =
+            typeof layerInfo[lang] === 'function'
+                ? layerInfo[lang](func.runtime)
+                : layerInfo[lang]
 
         let skipHandlerDelegation = false
         const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
