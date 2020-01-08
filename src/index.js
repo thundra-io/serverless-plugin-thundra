@@ -290,10 +290,8 @@ class ServerlessThundraPlugin {
     }
 
     addLayer(func, funcName, lang) {
-        const providerRuntime = _.get(
-            this,
-            'serverless.service.provider.runtime'
-        )
+        const service = this.serverless.service
+        const providerRuntime = _.get(service, 'provider.runtime')
         if (!func.runtime) {
             func.runtime = providerRuntime
         }
@@ -310,7 +308,7 @@ class ServerlessThundraPlugin {
             customRuntime,
         } =
             typeof layerInfo[lang] === 'function'
-                ? layerInfo[lang](func.runtime)
+                ? layerInfo[lang](func, service)
                 : layerInfo[lang]
 
         let skipHandlerDelegation = false

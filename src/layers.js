@@ -12,25 +12,34 @@ exports.layerInfo = {
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
-    node: runtime => {
-        const versionStr = runtime.split('nodejs')[1].split('.')[0]
+    node: (func, service) => {
+        const optsWithCR = {
+            layerName: 'thundra-lambda-node-layer',
+            defaultLayerVersion: '32',
+            needHandlerDelegation: false,
+            customRuntime: true,
+        }
+
+        const optsWithoutCR = {
+            layerName: 'thundra-lambda-node-layer',
+            defaultLayerVersion: '32',
+            needHandlerDelegation: true,
+            thundraHandlerName:
+                '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
+        }
+
+        const useCustomRuntime =
+            _.get(func, 'custom.thundra.useCustomRuntime') ||
+            _.get(service, 'custom.thundra.useCustomRuntime') ||
+            false
+
+        const versionStr = func.runtime.split('nodejs')[1].split('.')[0]
         const version = Number(versionStr)
 
-        if (version <= 8) {
-            return {
-                layerName: 'thundra-lambda-node-layer',
-                defaultLayerVersion: '32',
-                needHandlerDelegation: false,
-                customRuntime: true,
-            }
+        if (useCustomRuntime || version <= 8) {
+            return optsWithCR
         } else {
-            return {
-                layerName: 'thundra-lambda-node-layer',
-                defaultLayerVersion: '32',
-                needHandlerDelegation: true,
-                thundraHandlerName:
-                    '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
-            }
+            return optsWithoutCR
         }
     },
     layerAwsAccountNo: 269863060030,
