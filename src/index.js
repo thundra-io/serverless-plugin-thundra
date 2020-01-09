@@ -9,7 +9,7 @@ const {
     generateWrapperCode,
     generateWrapperExt,
 } = require('./handlers')
-const { layerInfo, getLayerARN } = require('./layers')
+const { layerInfo, getLayerARN, getUserLayerVersion } = require('./layers')
 const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the python Thundra's library
@@ -300,6 +300,7 @@ class ServerlessThundraPlugin {
             this.warnNoLayerInfoExistsForLang(lang)
         }
         const { delegatedHandlerEnvVarName, layerAwsAccountNo } = layerInfo
+        const userLayerVersion = getUserLayerVersion(func, service, lang)
         const {
             layerName,
             defaultLayerVersion,
@@ -308,7 +309,7 @@ class ServerlessThundraPlugin {
             customRuntime,
         } =
             typeof layerInfo[lang] === 'function'
-                ? layerInfo[lang](func, service)
+                ? layerInfo[lang](func, service, userLayerVersion)
                 : layerInfo[lang]
 
         let skipHandlerDelegation = false
@@ -364,21 +365,10 @@ class ServerlessThundraPlugin {
         }
 
         if (!skipLayerAddition) {
-            const layerRegion = this.serverless.service.provider.region
-            const globalLayerVersion = _.get(
-                this.serverless.service,
-                'custom.thundra.layer.version'
-            )
-            const globalLangLayerVersion = _.get(
-                this.serverless.service,
-                `custom.thundra.${lang}.layer.version`
-            )
-            const funcLayerVersion = _.get(func, `custom.thundra.layer.version`)
-            const layerVersion =
-                funcLayerVersion ||
-                globalLangLayerVersion ||
-                globalLayerVersion ||
-                defaultLayerVersion
+            const layerRegion = service.provider.region
+            const layerVersion = this.isValidLayerVersion(userLayerVersion)
+                ? userLayerVersion
+                : defaultLayerVersion
             const layerARN = getLayerARN(
                 layerRegion,
                 layerAwsAccountNo,
@@ -396,6 +386,17 @@ class ServerlessThundraPlugin {
 
         if (customRuntime) {
             func.runtime = 'provided'
+        }
+    }
+
+    isValidLayerVersion(layerVersion) {
+        try {
+            if (layerVersion === 'latest') {
+                return true
+            }
+            return !isNaN(Number(layerVersion))
+        } catch (e) {
+            return false
         }
     }
 
