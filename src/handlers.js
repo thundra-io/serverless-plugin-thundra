@@ -1,4 +1,4 @@
-const _ = require('lodash')
+const get = require('lodash.get')
 
 const THUNDRA_LANG_WRAPPERS = {
     node: `
@@ -50,7 +50,7 @@ exports.generateWrapperExt = function(func) {
  */
 exports.generateWrapperCode = function(func, config) {
     const customNodePath =
-        _.get(func, 'custom.thundra.node_modules_path') ||
+        get(func, 'custom.thundra.node_modules_path') ||
         config.node_modules_path ||
         ''
     return THUNDRA_LANG_WRAPPERS[func.language]

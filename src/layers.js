@@ -1,4 +1,4 @@
-const _ = require('lodash')
+const get = require('lodash.get')
 
 exports.layerInfo = {
     java: {
@@ -39,12 +39,13 @@ function getNodeLayerProps(func, service, userLayerVersion) {
         const withoutCRVersionThreshold = 32
 
         const eligibleForWithoutCR =
+            userLayerVersion === undefined ||
             userLayerVersion === 'latest' ||
             Number(userLayerVersion) > withoutCRVersionThreshold
 
         const useCustomRuntime =
-            _.get(func, 'custom.thundra.useCustomRuntime') ||
-            _.get(service, 'custom.thundra.useCustomRuntime') ||
+            get(func, 'custom.thundra.useCustomRuntime') ||
+            get(service, 'custom.thundra.useCustomRuntime') ||
             false
 
         const versionStr = func.runtime.split('nodejs')[1].split('.')[0]
@@ -75,12 +76,12 @@ exports.getLayerARN = (region, accountNo, name, version) => {
 }
 
 exports.getUserLayerVersion = (func, service, lang) => {
-    const globalLayerVersion = _.get(service, 'custom.thundra.layer.version')
-    const globalLangLayerVersion = _.get(
+    const globalLayerVersion = get(service, 'custom.thundra.layer.version')
+    const globalLangLayerVersion = get(
         service,
         `custom.thundra.${lang}.layer.version`
     )
-    const funcLayerVersion = _.get(func, `custom.thundra.layer.version`)
+    const funcLayerVersion = get(func, `custom.thundra.layer.version`)
 
     const userLayerVersion =
         funcLayerVersion || globalLangLayerVersion || globalLayerVersion
