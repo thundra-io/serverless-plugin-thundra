@@ -9,7 +9,7 @@ const {
     generateWrapperCode,
     generateWrapperExt,
 } = require('./handlers')
-const { layerInfo, getLayerARN } = require('./layers')
+const { layerInfo, getLayerARN, getUserLayerVersion } = require('./layers')
 const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the python Thundra's library
@@ -290,10 +290,8 @@ class ServerlessThundraPlugin {
     }
 
     addLayer(func, funcName, lang) {
-        const providerRuntime = _.get(
-            this,
-            'serverless.service.provider.runtime'
-        )
+        const service = this.serverless.service
+        const providerRuntime = _.get(service, 'provider.runtime')
         if (!func.runtime) {
             func.runtime = providerRuntime
         }
@@ -302,13 +300,17 @@ class ServerlessThundraPlugin {
             this.warnNoLayerInfoExistsForLang(lang)
         }
         const { delegatedHandlerEnvVarName, layerAwsAccountNo } = layerInfo
+        const userLayerVersion = getUserLayerVersion(func, service, lang)
         const {
             layerName,
             defaultLayerVersion,
             thundraHandlerName,
             needHandlerDelegation,
             customRuntime,
-        } = layerInfo[lang]
+        } =
+            typeof layerInfo[lang] === 'function'
+                ? layerInfo[lang](func, service, userLayerVersion)
+                : layerInfo[lang]
 
         let skipHandlerDelegation = false
         const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
@@ -363,21 +365,10 @@ class ServerlessThundraPlugin {
         }
 
         if (!skipLayerAddition) {
-            const layerRegion = this.serverless.service.provider.region
-            const globalLayerVersion = _.get(
-                this.serverless.service,
-                'custom.thundra.layer.version'
-            )
-            const globalLangLayerVersion = _.get(
-                this.serverless.service,
-                `custom.thundra.${lang}.layer.version`
-            )
-            const funcLayerVersion = _.get(func, `custom.thundra.layer.version`)
-            const layerVersion =
-                funcLayerVersion ||
-                globalLangLayerVersion ||
-                globalLayerVersion ||
-                defaultLayerVersion
+            const layerRegion = service.provider.region
+            const layerVersion = this.isValidLayerVersion(userLayerVersion)
+                ? userLayerVersion
+                : defaultLayerVersion
             const layerARN = getLayerARN(
                 layerRegion,
                 layerAwsAccountNo,
@@ -395,6 +386,17 @@ class ServerlessThundraPlugin {
 
         if (customRuntime) {
             func.runtime = 'provided'
+        }
+    }
+
+    isValidLayerVersion(layerVersion) {
+        try {
+            if (layerVersion === 'latest') {
+                return true
+            }
+            return !isNaN(Number(layerVersion))
+        } catch (e) {
+            return false
         }
     }
 
