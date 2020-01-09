@@ -1,9 +1,16 @@
 const fs = require('fs')
 const { join } = require('path')
-const _ = require('lodash')
 const axios = require('axios')
 const rimraf = require('rimraf')
 const BbPromise = require('bluebird')
+
+const get = require('lodash.get')
+const uniq = require('lodash.uniq')
+const isString = require('lodash.isstring')
+const last = require('lodash.last')
+const isEmpty = require('lodash.isempty')
+const set = require('lodash.set')
+
 const {
     AGENT_LANGS,
     generateWrapperCode,
@@ -64,7 +71,7 @@ class ServerlessThundraPlugin {
     constructor(serverless = {}, options) {
         this.serverless = serverless
         this.prefix =
-            _.get(serverless.service, 'custom.thundra.package_json_path') ||
+            get(serverless.service, 'custom.thundra.package_json_path') ||
             options.prefix ||
             process.env.npm_config_prefix ||
             this.serverless.config.servicePath
@@ -140,7 +147,7 @@ class ServerlessThundraPlugin {
      * Checks that all of the required Thundra libraries are installed.
      */
     libCheck() {
-        const languages = _.uniq(this.funcs.map(func => func.language))
+        const languages = uniq(this.funcs.map(func => func.language))
         languages.forEach(lang => {
             VALIDATE_LIB_BY_LANG[lang].bind(this)()
         })
@@ -174,12 +181,12 @@ class ServerlessThundraPlugin {
                 const funcName = key
                 const runtime = func.runtime || provider.runtime
 
-                if (_.get(func, 'custom.thundra.disable', false)) {
+                if (get(func, 'custom.thundra.disable', false)) {
                     this.warnThundraDisabled(funcName)
                     continue
                 }
 
-                if (!_.isString(runtime)) {
+                if (!isString(runtime)) {
                     continue
                 }
 
@@ -191,7 +198,7 @@ class ServerlessThundraPlugin {
                     continue
                 }
 
-                const handler = _.isString(func.handler)
+                const handler = isString(func.handler)
                     ? func.handler.split('.')
                     : []
                 let relativePath = ''
@@ -210,9 +217,9 @@ class ServerlessThundraPlugin {
 
                 if (language === 'python') {
                     const method =
-                        _.get(func, 'custom.thundra.mode') ||
-                        _.get(service, 'custom.thundra.python.mode') ||
-                        _.get(service, 'custom.thundra.mode') ||
+                        get(func, 'custom.thundra.mode') ||
+                        get(service, 'custom.thundra.python.mode') ||
+                        get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         this.addLayer(func, funcName, 'python')
@@ -226,9 +233,9 @@ class ServerlessThundraPlugin {
                     }
                 } else if (language === 'node') {
                     const method =
-                        _.get(func, 'custom.thundra.mode') ||
-                        _.get(service, 'custom.thundra.node.mode') ||
-                        _.get(service, 'custom.thundra.mode') ||
+                        get(func, 'custom.thundra.mode') ||
+                        get(service, 'custom.thundra.node.mode') ||
+                        get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         this.addLayer(func, funcName, 'node')
@@ -247,9 +254,9 @@ class ServerlessThundraPlugin {
                     }
                 } else if (language === 'java8') {
                     const method =
-                        _.get(func, 'custom.thundra.mode') ||
-                        _.get(service, 'custom.thundra.java.mode') ||
-                        _.get(service, 'custom.thundra.mode') ||
+                        get(func, 'custom.thundra.mode') ||
+                        get(service, 'custom.thundra.java.mode') ||
+                        get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
                         if (func.handler.includes('::')) {
@@ -276,7 +283,7 @@ class ServerlessThundraPlugin {
 
                 funcs.push(
                     Object.assign(func, {
-                        method: _.last(handler),
+                        method: last(handler),
                         funcName,
                         relativePath,
                         language,
@@ -291,7 +298,7 @@ class ServerlessThundraPlugin {
 
     addLayer(func, funcName, lang) {
         const service = this.serverless.service
-        const providerRuntime = _.get(service, 'provider.runtime')
+        const providerRuntime = get(service, 'provider.runtime')
         if (!func.runtime) {
             func.runtime = providerRuntime
         }
@@ -405,15 +412,15 @@ class ServerlessThundraPlugin {
             this.latestLayerArnMap = {}
             const promiseMap = {}
             const latestLayerPromises = []
-            const providerRuntime = _.get(
+            const providerRuntime = get(
                 this,
                 'serverless.service.provider.runtime'
             )
-            const providerRegion = _.get(
+            const providerRegion = get(
                 this,
                 'serverless.service.provider.region'
             )
-            const functions = _.get(this, 'serverless.service.functions')
+            const functions = get(this, 'serverless.service.functions')
 
             if (providerRuntime) {
                 latestLayerPromises.push(
@@ -426,7 +433,7 @@ class ServerlessThundraPlugin {
                 for (const key in functions) {
                     if (functions.hasOwnProperty(key)) {
                         const func = functions[key]
-                        const runtime = _.get(func, 'runtime')
+                        const runtime = get(func, 'runtime')
                         if (runtime && !promiseMap[runtime]) {
                             latestLayerPromises.push(
                                 this.getLatestLayerVersion(
@@ -442,11 +449,11 @@ class ServerlessThundraPlugin {
             Promise.all(latestLayerPromises)
                 .then(response => {
                     for (let obj of response) {
-                        const compatibleRuntimes = _.get(
+                        const compatibleRuntimes = get(
                             obj,
                             'latest.[0].LatestMatchingVersion.CompatibleRuntimes'
                         )
-                        const arn = _.get(
+                        const arn = get(
                             obj,
                             'latest.[0].LatestMatchingVersion.LayerVersionArn'
                         )
@@ -455,7 +462,7 @@ class ServerlessThundraPlugin {
                         }
                     }
 
-                    if (!_.isEmpty(this.latestLayerArnMap)) {
+                    if (!isEmpty(this.latestLayerArnMap)) {
                         resolve()
                     } else {
                         reject(
@@ -590,7 +597,7 @@ class ServerlessThundraPlugin {
      */
     assignHandlers() {
         this.funcs.forEach(func => {
-            _.set(
+            set(
                 this.serverless.service.functions,
                 `${func.funcName}.handler`,
                 join(
