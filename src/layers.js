@@ -22,14 +22,14 @@ exports.layerInfo = {
 function getNodeLayerProps(func, service, userLayerVersion) {
     const optsWithCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '33',
+        defaultLayerVersion: '34',
         needHandlerDelegation: false,
         customRuntime: true,
     }
 
     const optsWithoutCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '33',
+        defaultLayerVersion: '34',
         needHandlerDelegation: true,
         thundraHandlerName:
             '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
