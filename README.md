@@ -115,6 +115,18 @@ custom:
 
 Alternatively, this can be overriden using the serverless cli argument `--prefix=<directory` or the `npm_config_prefix` environment variable.
 
+### Specify Layer version
+By default, plugin uses default layer version of the plugin and it might be changed by each version of plugin.
+But it can be specified by configuration property in the yml file globally and/or function based.
+
+**Globally:**
+```yaml
+custom:
+  thundra:
+    layer:
+      version: <layer version of the corresponding agent>
+```
+
 ### Specify Layer version [Java]
 By default, plugin uses default Java layer version of the plugin and it might be changed by each version of plugin.
 But it can be specified by configuration property in the yml file globally and/or function based.
