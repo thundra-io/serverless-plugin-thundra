@@ -122,6 +122,23 @@ class ServerlessThundraPlugin {
         )
     }
 
+    checkBundlerPlugins() {
+        const plugins = get(this,'serverless.pluginManager.plugins', []);
+        let bundlerExist = false;
+        let bundlerAfterThundra = true;
+        for (const plugin of plugins) {
+            if( plugin.constructor.name === 'ServerlessWebpack' ) {
+                bundlerExist = true;
+            }
+
+            if(bundlerExist && plugin.constructor.name === 'ServerlessThundraPlugin') {
+                bundlerAfterThundra = false;
+            }
+        }
+        return {bundlerExist, bundlerAfterThundra};
+    }
+
+
     /**
      * Wraps function handlers with Thundra
      */
@@ -214,7 +231,8 @@ class ServerlessThundraPlugin {
                         }
                     }
                 }
-
+                const bundlerPluginStatus = this.checkBundlerPlugins();
+                console.log("bundlerPluginStatus", bundlerPluginStatus)
                 if (language === 'python') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
@@ -222,11 +240,22 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        this.addLayer(func, funcName, 'python')
-                        continue
+                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
+                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
+                            throw Error("Plugin order conflict");
+                        } else {
+                            this.addLayer(func, funcName, 'python')
+                            continue
+                        }
                     } else if (method === 'wrap') {
-                        relativePath = handler.slice(0, -1).join('.')
-                        relativePath = relativePath.replace(/\//g, '.')
+                        if( bundlerPluginStatus.bundlerExist ) {
+                            this.warnBundlerExist(funcName, method);
+                            continue;
+                        } else {
+                            relativePath = handler.slice(0, -1).join('.')
+                            relativePath = relativePath.replace(/\//g, '.')
+                        }
+
                     } else {
                         this.warnMethodNotSupported(funcName, method)
                         continue
@@ -238,15 +267,25 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        this.addLayer(func, funcName, 'node')
-                        continue
+                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
+                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
+                            throw Error("Plugin order conflict");
+                        } else {
+                            this.addLayer(func, funcName, 'node')
+                            continue
+                        }
                     } else if (method === 'wrap') {
-                        relativePath = handler.slice(0, -1).join('.')
-                        const lastSlashIndex = relativePath.lastIndexOf('/')
-                        if (lastSlashIndex !== -1) {
-                            localThundraDir =
-                                relativePath.slice(0, lastSlashIndex + 1) +
-                                'node_modules'
+                        if( bundlerPluginStatus.bundlerExist ) {
+                            this.warnBundlerExist(funcName, method);
+                            continue;
+                        } else {
+                            relativePath = handler.slice(0, -1).join('.')
+                            const lastSlashIndex = relativePath.lastIndexOf('/')
+                            if (lastSlashIndex !== -1) {
+                                localThundraDir =
+                                    relativePath.slice(0, lastSlashIndex + 1) +
+                                    'node_modules'
+                            }
                         }
                     } else {
                         this.warnMethodNotSupported(funcName, method)
@@ -259,17 +298,22 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        if (func.handler.includes('::')) {
-                            this.log(
-                                'Method specification for handler by "::" is not supported. ' +
+                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
+                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
+                            throw Error("Plugin order conflict");
+                        } else {
+                            if (func.handler.includes('::')) {
+                                this.log(
+                                    'Method specification for handler by "::" is not supported. ' +
                                     'So function ' +
                                     funcName +
                                     ' will not be wrapped!'
-                            )
+                                )
+                                continue
+                            }
+                            this.addLayer(func, funcName, 'java')
                             continue
                         }
-                        this.addLayer(func, funcName, 'java')
-                        continue
                     } else if (method === 'wrap') {
                         this.log(
                             'Code wrapping is not supported for java lambda functions. ' +
@@ -506,6 +550,13 @@ class ServerlessThundraPlugin {
         this.log(
             `Given method '${method}' for function with the name '${funcName}' is not a valid method ` +
                 "please use one of the followings: 'layer', 'wrap'. Skipping..."
+        )
+    }
+
+    warnBundlerExist(funcName, method) {
+        this.log(
+            "Thundra cannot wrap given method '${method}' for function with the name '${funcName}. " +
+            "Please use 'layer'... mode when module bundler(webpack etc...) plugin is enabled"
         )
     }
 
