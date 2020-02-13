@@ -123,21 +123,23 @@ class ServerlessThundraPlugin {
     }
 
     checkBundlerPlugins() {
-        const plugins = get(this,'serverless.pluginManager.plugins', []);
-        let bundlerExist = false;
-        let bundlerAfterThundra = true;
+        const plugins = get(this, 'serverless.pluginManager.plugins', [])
+        let bundlerExist = false
+        let bundlerAfterThundra = true
         for (const plugin of plugins) {
-            if( plugin.constructor.name === 'ServerlessWebpack' ) {
-                bundlerExist = true;
+            if (plugin.constructor.name === 'ServerlessWebpack') {
+                bundlerExist = true
             }
 
-            if(bundlerExist && plugin.constructor.name === 'ServerlessThundraPlugin') {
-                bundlerAfterThundra = false;
+            if (
+                bundlerExist &&
+                plugin.constructor.name === 'ServerlessThundraPlugin'
+            ) {
+                bundlerAfterThundra = false
             }
         }
-        return {bundlerExist, bundlerAfterThundra};
+        return { bundlerExist, bundlerAfterThundra }
     }
-
 
     /**
      * Wraps function handlers with Thundra
@@ -231,7 +233,7 @@ class ServerlessThundraPlugin {
                         }
                     }
                 }
-                const bundlerPluginStatus = this.checkBundlerPlugins();
+                const bundlerPluginStatus = this.checkBundlerPlugins()
                 if (language === 'python') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
@@ -239,22 +241,26 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
-                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
-                            throw Error("Plugin order conflict");
+                        if (
+                            bundlerPluginStatus.bundlerExist &&
+                            bundlerPluginStatus.bundlerAfterThundra
+                        ) {
+                            this.log(
+                                'Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml'
+                            )
+                            throw Error('Plugin order conflict')
                         } else {
                             this.addLayer(func, funcName, 'python')
                             continue
                         }
                     } else if (method === 'wrap') {
-                        if( bundlerPluginStatus.bundlerExist ) {
-                            this.warnBundlerExist(funcName, method);
-                            continue;
+                        if (bundlerPluginStatus.bundlerExist) {
+                            this.warnBundlerExist(funcName, method)
+                            continue
                         } else {
                             relativePath = handler.slice(0, -1).join('.')
                             relativePath = relativePath.replace(/\//g, '.')
                         }
-
                     } else {
                         this.warnMethodNotSupported(funcName, method)
                         continue
@@ -266,17 +272,22 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
-                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
-                            throw Error("Plugin order conflict");
+                        if (
+                            bundlerPluginStatus.bundlerExist &&
+                            bundlerPluginStatus.bundlerAfterThundra
+                        ) {
+                            this.log(
+                                'Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml'
+                            )
+                            throw Error('Plugin order conflict')
                         } else {
                             this.addLayer(func, funcName, 'node')
                             continue
                         }
                     } else if (method === 'wrap') {
-                        if( bundlerPluginStatus.bundlerExist ) {
-                            this.warnBundlerExist(funcName, method);
-                            continue;
+                        if (bundlerPluginStatus.bundlerExist) {
+                            this.warnBundlerExist(funcName, method)
+                            continue
                         } else {
                             relativePath = handler.slice(0, -1).join('.')
                             const lastSlashIndex = relativePath.lastIndexOf('/')
@@ -297,16 +308,21 @@ class ServerlessThundraPlugin {
                         get(service, 'custom.thundra.mode') ||
                         'layer'
                     if (method === 'layer') {
-                        if (bundlerPluginStatus.bundlerExist && bundlerPluginStatus.bundlerAfterThundra) {
-                            this.log('Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml');
-                            throw Error("Plugin order conflict");
+                        if (
+                            bundlerPluginStatus.bundlerExist &&
+                            bundlerPluginStatus.bundlerAfterThundra
+                        ) {
+                            this.log(
+                                'Thundra serveless plugin should registred after module bundler plugins(webpack etc...) in serverless.yml'
+                            )
+                            throw Error('Plugin order conflict')
                         } else {
                             if (func.handler.includes('::')) {
                                 this.log(
                                     'Method specification for handler by "::" is not supported. ' +
-                                    'So function ' +
-                                    funcName +
-                                    ' will not be wrapped!'
+                                        'So function ' +
+                                        funcName +
+                                        ' will not be wrapped!'
                                 )
                                 continue
                             }
@@ -555,9 +571,9 @@ class ServerlessThundraPlugin {
     warnBundlerExist(funcName, method) {
         this.log(
             `Thundra cannot wrap given method '${method}' for function with the name '${funcName}. ` +
-            `Please edit serverless.yml to use 'layer' mode when module bundler(webpack etc...) plugin is enabled.`
+                `Please edit serverless.yml to use 'layer' mode when module bundler(webpack etc...) plugin is enabled.`
         )
-        throw Error("Thundra wrap mode bundler plugin conflict happened");
+        throw Error('Thundra wrap mode bundler plugin conflict happened')
     }
 
     warnLayerAlreadyExists(funcName) {
