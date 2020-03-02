@@ -76,8 +76,6 @@ function getJavaLayerProps(func, service, userLayerVersion) {
         get(service, 'custom.thundra.useCustomRuntime') ||
         false
 
-    console.log(useCustomRuntime, typeof useCustomRuntime)
-
     if (useCustomRuntime) {
         return optsWithCR
     }
