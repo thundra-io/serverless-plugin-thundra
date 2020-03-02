@@ -1,16 +1,10 @@
 const get = require('lodash.get')
 
 exports.layerInfo = {
-    java: {
-        layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '37',
-        thundraHandlerName:
-            'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
-        needHandlerDelegation: true,
-    },
+    java: getJavaLayerProps,
     python: {
         layerName: 'thundra-lambda-python-layer',
-        defaultLayerVersion: '17',
+        defaultLayerVersion: '20',
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
@@ -22,14 +16,14 @@ exports.layerInfo = {
 function getNodeLayerProps(func, service, userLayerVersion) {
     const optsWithCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '34',
+        defaultLayerVersion: '43',
         needHandlerDelegation: false,
         customRuntime: true,
     }
 
     const optsWithoutCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '34',
+        defaultLayerVersion: '43',
         needHandlerDelegation: true,
         thundraHandlerName:
             '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
@@ -59,6 +53,36 @@ function getNodeLayerProps(func, service, userLayerVersion) {
     } catch (e) {
         return optsWithCR
     }
+}
+
+function getJavaLayerProps(func, service, userLayerVersion) {
+    const optsWithoutCR = {
+        layerName: 'thundra-lambda-java-layer',
+        defaultLayerVersion: '42',
+        thundraHandlerName:
+            'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
+        needHandlerDelegation: true,
+    }
+
+    const optsWithCR = {
+        layerName: 'thundra-lambda-java-layer',
+        defaultLayerVersion: '42',
+        customRuntime: true,
+        needHandlerDelegation: false,
+    }
+
+    const useCustomRuntime =
+        get(func, 'custom.thundra.useCustomRuntime') ||
+        get(service, 'custom.thundra.useCustomRuntime') ||
+        false
+
+    console.log(useCustomRuntime, typeof useCustomRuntime)
+
+    if (useCustomRuntime) {
+        return optsWithCR
+    }
+
+    return useCustomRuntime ? optsWithCR : optsWithoutCR
 }
 
 exports.getLayerARN = (region, accountNo, name, version) => {
