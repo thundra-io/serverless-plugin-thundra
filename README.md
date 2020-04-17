@@ -119,6 +119,9 @@ Alternatively, this can be overriden using the serverless cli argument `--prefix
 By default, plugin uses default layer version of the plugin and it might be changed by each version of plugin.
 But it can be specified by configuration property in the yml file globally and/or function based.
 
+#### Latest Layer version
+Plugin will fetch and set the latest layer version if the version value is set to `latest` in the configuration above.
+
 **Globally:**
 ```yaml
 custom:
