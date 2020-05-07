@@ -16,21 +16,30 @@ exports.layerInfo = {
 function getNodeLayerProps(func, service, userLayerVersion) {
     const optsWithCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '43',
+        defaultLayerVersion: '57',
         needHandlerDelegation: false,
         customRuntime: true,
     }
 
     const optsWithoutCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '43',
+        defaultLayerVersion: '57',
         needHandlerDelegation: true,
         thundraHandlerName:
             '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
     }
 
+    const optsMinified = {
+        layerName: 'thundra-lambda-node-layer-minified',
+        defaultLayerVersion: '57',
+        needHandlerDelegation: true,
+        thundraHandlerName:
+            'thundra_handler.wrapper',
+    }
+
     try {
         const withoutCRVersionThreshold = 32
+        const minifiedLayerThreshold = 57
 
         const eligibleForWithoutCR =
             userLayerVersion === undefined ||
@@ -49,7 +58,12 @@ function getNodeLayerProps(func, service, userLayerVersion) {
             return optsWithCR
         }
 
-        return optsWithoutCR
+        const eligibleForMinified = 
+            userLayerVersion === undefined ||
+            userLayerVersion === 'latest' || 
+            Number(userLayerVersion) >= minifiedLayerThreshold
+
+        return eligibleForMinified ? optsMinified : optsWithoutCR
     } catch (e) {
         return optsWithCR
     }
