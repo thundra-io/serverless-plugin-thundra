@@ -26,7 +26,7 @@ function getNodeLayerProps(func, service, userLayerVersion) {
         defaultLayerVersion: '57',
         needHandlerDelegation: true,
         thundraHandlerName:
-            'thundra_handler.wrapper',
+            '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
     }
 
     const optsMinified = {
