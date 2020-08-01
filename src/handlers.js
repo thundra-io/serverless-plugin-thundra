@@ -27,6 +27,7 @@ def METHOD(event, context):
   return actual_METHOD(event, context)
       `,
     java8: null,
+    dotnet: null
 }
 
 const EXTENTION_GENERATORS = {

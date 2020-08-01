@@ -279,6 +279,34 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
+                }else if(language === 'dotnet'){
+                    const method =
+                        get(func, 'custom.thundra.mode') ||
+                        get(service, 'custom.thundra.dotnet.mode') ||
+                        get(service, 'custom.thundra.mode') ||
+                        'layer'
+
+                        if (method === 'layer') {
+                            if (func.handler.includes('::')) {
+                                this.log(
+                                    'Method specification for handler by "::" is not supported. ' +
+                                        'So function ' +
+                                        funcName +
+                                        ' will not be wrapped!'
+                                )
+                                continue
+                            }
+                            this.addLayer(func, funcName, 'dotnet')
+                            continue
+                        } else if (method === 'wrap') {
+                            this.log(
+                                'Code wrapping is not supported for java lambda functions. ' +
+                                    "Please use 'layer' method instead."
+                            )
+                        } else {
+                            this.warnMethodNotSupported(funcName, method)
+                            continue
+                        }
                 }
 
                 funcs.push(
