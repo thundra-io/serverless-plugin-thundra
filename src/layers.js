@@ -71,7 +71,7 @@ function getNodeLayerProps(func, service, userLayerVersion) {
 function getJavaLayerProps(func, service, userLayerVersion) {
     const optsWithoutCR = {
         layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '42',
+        defaultLayerVersion: '56',
         thundraHandlerName:
             'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
         needHandlerDelegation: true,
@@ -79,7 +79,7 @@ function getJavaLayerProps(func, service, userLayerVersion) {
 
     const optsWithCR = {
         layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '42',
+        defaultLayerVersion: '56',
         customRuntime: true,
         needHandlerDelegation: false,
     }
