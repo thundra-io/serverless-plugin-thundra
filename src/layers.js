@@ -4,7 +4,7 @@ exports.layerInfo = {
     java: getJavaLayerProps,
     python: {
         layerName: 'thundra-lambda-python-layer',
-        defaultLayerVersion: '20',
+        defaultLayerVersion: '38',
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
