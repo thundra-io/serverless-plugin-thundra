@@ -473,11 +473,8 @@ class ServerlessThundraPlugin {
                     }
                 })
                 .catch(err => {
-                    reject(
-                        Error(
-                            `Given runtime and region pair is not valid for Thundra layers`
-                        )
-                    )
+                    console.error(err);
+                    reject(Error(`Error while getting Thundra layers`));
                 })
         })
     }
