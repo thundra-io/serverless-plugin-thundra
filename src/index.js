@@ -473,8 +473,9 @@ class ServerlessThundraPlugin {
                     }
                 })
                 .catch(err => {
-                    console.error(err);
-                    reject(Error(`Error while getting Thundra layers`));
+                    const rethrownError = new Error('Error while getting Thundra layers');
+                    rethrownError.stack = rethrownError.stack.split('\n').slice(0, 2).join('\n') + '\n' + err.stack;
+                    reject(rethrownError);
                 })
         })
     }
