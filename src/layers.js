@@ -4,13 +4,13 @@ exports.layerInfo = {
     java: getJavaLayerProps,
     dotnet: {
         layerName: 'thundra-lambda-dotnetcore21',
-        defaultLayerVersion: '5',
+        defaultLayerVersion: '6',
         thundraHandlerName: 'Thundra.Agent.Lambda.Core.ThundraProxy',
         needHandlerDelegation: true,
     },
     python: {
         layerName: 'thundra-lambda-python-layer',
-        defaultLayerVersion: '20',
+        defaultLayerVersion: '38',
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
@@ -22,14 +22,14 @@ exports.layerInfo = {
 function getNodeLayerProps(func, service, userLayerVersion) {
     const optsWithCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '64',
+        defaultLayerVersion: '69',
         needHandlerDelegation: false,
         customRuntime: true,
     }
 
     const optsWithoutCR = {
         layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '64',
+        defaultLayerVersion: '69',
         needHandlerDelegation: true,
         thundraHandlerName:
             '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
@@ -37,7 +37,7 @@ function getNodeLayerProps(func, service, userLayerVersion) {
 
     const optsMinified = {
         layerName: 'thundra-lambda-node-layer-minified',
-        defaultLayerVersion: '64',
+        defaultLayerVersion: '69',
         needHandlerDelegation: true,
         thundraHandlerName: 'thundra_handler.wrapper',
     }
@@ -77,7 +77,7 @@ function getNodeLayerProps(func, service, userLayerVersion) {
 function getJavaLayerProps(func, service, userLayerVersion) {
     const optsWithoutCR = {
         layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '42',
+        defaultLayerVersion: '56',
         thundraHandlerName:
             'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
         needHandlerDelegation: true,
@@ -85,7 +85,7 @@ function getJavaLayerProps(func, service, userLayerVersion) {
 
     const optsWithCR = {
         layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '42',
+        defaultLayerVersion: '56',
         customRuntime: true,
         needHandlerDelegation: false,
     }
