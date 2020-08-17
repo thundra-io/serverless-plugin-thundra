@@ -1,10 +1,5 @@
 const get = require('lodash.get')
 
-const LAYER_VERSION_DOTNET = '6'
-const LAYER_VERSION_JAVA = '56'
-const LAYER_VERSION_NODE = '69'
-const LAYER_VERSION_PYTHON = '38'
-
 exports.layerInfo = {
     java: getJavaLayerProps,
     dotnetcore: {
