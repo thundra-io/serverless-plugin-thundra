@@ -75,34 +75,6 @@ class ServerlessThundraPlugin {
      * @param {Object} options options.
      */
 
-    getRuntime(provider, functions) {
-        return 'dotnetcore2.1'
-
-        let providerRuntime = ''
-        let functionsRuntime = ''
-        if (provider.runtime) {
-            providerRuntime = provider.runtime
-        }
-
-        if (functions && functions.length > 0) {
-            functions.forEach(func => {})
-        }
-    }
-
-    dotnetControls(service) {
-        const providerRuntime = this.getRuntime(
-            service.provider,
-            service.functions
-        )
-        if (providerRuntime.startsWith('dotnet')) {
-            if (functions && functions.length > 0) {
-                functions.forEach(func => {
-                    func.runtime = 'provided'
-                })
-            }
-        }
-    }
-
     constructor(serverless = {}, options) {
         this.serverless = serverless
         this.prefix =
@@ -126,50 +98,17 @@ class ServerlessThundraPlugin {
             },
         }
 
-        // this.hooks = {
-        //     'before:package:createDeploymentArtifacts': () =>
-        //         BbPromise.bind(this).then(this.run),
-        //     'before:deploy:function:packageFunction': () =>
-        //         BbPromise.bind(this).then(this.run),
-        //     'before:invoke:local:invoke': () =>
-        //         BbPromise.bind(this).then(this.run),
-        //     'before:offline:start:init': () =>
-        //         BbPromise.bind(this).then(this.run),
-        //     'before:step-functions-offline:start': () =>
-        //         BbPromise.bind(this).then(this.run),
-        //     'after:package:createDeploymentArtifacts': () =>
-        //         BbPromise.bind(this).then(this.cleanup),
-        //     'after:invoke:local:invoke': () =>
-        //         BbPromise.bind(this).then(this.cleanup),
-        //     'thundra:clean:init': () => BbPromise.bind(this).then(this.cleanup),
-        // }
-
         this.hooks = {
-            'before:package:createDeploymentArtifacts': () => {
-                console.log('=> before:package:createDeploymentArtifacts')
-                BbPromise.bind(this).then(this.run)
-            },
-
-            'before:deploy:function:packageFunction': () => {
-                console.log('=> before:deploy:function:packageFunction')
-                BbPromise.bind(this).then(this.run)
-            },
-
-            'before:invoke:local:invoke': () => {
-                console.log('=> before:invoke:local:invoke')
-                BbPromise.bind(this).then(this.run)
-            },
-
-            'before:offline:start:init': () => {
-                console.log('=> before:offline:start:init')
-                BbPromise.bind(this).then(this.run)
-            },
-
-            'before:step-functions-offline:start': () => {
-                console.log('=> before:step-functions-offline:start')
-                BbPromise.bind(this).then(this.run)
-            },
-
+            'before:package:createDeploymentArtifacts': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:deploy:function:packageFunction': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:invoke:local:invoke': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:offline:start:init': () =>
+                BbPromise.bind(this).then(this.run),
+            'before:step-functions-offline:start': () =>
+                BbPromise.bind(this).then(this.run),
             'after:package:createDeploymentArtifacts': () =>
                 BbPromise.bind(this).then(this.cleanup),
             'after:invoke:local:invoke': () =>
@@ -250,6 +189,8 @@ class ServerlessThundraPlugin {
                 let runtime = func.runtime || provider.runtime
                 if (runtime.startsWith('dotnetcore')) {
                     runtime = 'dotnetcore'
+                    provider.environment['thundra_agent_lambda_handler'] =
+                        func.handler
                 }
 
                 if (!isString(runtime)) {
@@ -561,9 +502,17 @@ class ServerlessThundraPlugin {
                     }
                 })
                 .catch(err => {
-                    const rethrownError = new Error('Error while getting Thundra layers');
-                    rethrownError.stack = rethrownError.stack.split('\n').slice(0, 2).join('\n') + '\n' + err.stack;
-                    reject(rethrownError);
+                    const rethrownError = new Error(
+                        'Error while getting Thundra layers'
+                    )
+                    rethrownError.stack =
+                        rethrownError.stack
+                            .split('\n')
+                            .slice(0, 2)
+                            .join('\n') +
+                        '\n' +
+                        err.stack
+                    reject(rethrownError)
                 })
         })
     }
