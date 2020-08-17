@@ -1,6 +1,6 @@
 {
   "name": "serverless-plugin-thundra",
-  "version": "2.5.0",
+  "version": "2.5.3",
   "description": "Thundra's serverless plugin for automatic wrapping",
   "main": "dist/bundle.js",
   "keywords": [
