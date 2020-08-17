@@ -57,6 +57,12 @@ const VALIDATE_LIB_BY_LANG = {
             'Please ensure that all necessary Thundra Java agents are installed'
         )
     },
+
+    dotnetcore() {
+        this.log(
+            'Please ensure that all necessary Thundra .NET Core agents are installed'
+        )
+    },
 }
 
 /**
@@ -68,6 +74,35 @@ class ServerlessThundraPlugin {
      * @param {Object} serverless
      * @param {Object} options options.
      */
+
+    getRuntime(provider, functions) {
+        return 'dotnetcore2.1'
+
+        let providerRuntime = ''
+        let functionsRuntime = ''
+        if (provider.runtime) {
+            providerRuntime = provider.runtime
+        }
+
+        if (functions && functions.length > 0) {
+            functions.forEach(func => {})
+        }
+    }
+
+    dotnetControls(service) {
+        const providerRuntime = this.getRuntime(
+            service.provider,
+            service.functions
+        )
+        if (providerRuntime.startsWith('dotnet')) {
+            if (functions && functions.length > 0) {
+                functions.forEach(func => {
+                    func.runtime = 'provided'
+                })
+            }
+        }
+    }
+
     constructor(serverless = {}, options) {
         this.serverless = serverless
         this.prefix =
@@ -91,17 +126,50 @@ class ServerlessThundraPlugin {
             },
         }
 
+        // this.hooks = {
+        //     'before:package:createDeploymentArtifacts': () =>
+        //         BbPromise.bind(this).then(this.run),
+        //     'before:deploy:function:packageFunction': () =>
+        //         BbPromise.bind(this).then(this.run),
+        //     'before:invoke:local:invoke': () =>
+        //         BbPromise.bind(this).then(this.run),
+        //     'before:offline:start:init': () =>
+        //         BbPromise.bind(this).then(this.run),
+        //     'before:step-functions-offline:start': () =>
+        //         BbPromise.bind(this).then(this.run),
+        //     'after:package:createDeploymentArtifacts': () =>
+        //         BbPromise.bind(this).then(this.cleanup),
+        //     'after:invoke:local:invoke': () =>
+        //         BbPromise.bind(this).then(this.cleanup),
+        //     'thundra:clean:init': () => BbPromise.bind(this).then(this.cleanup),
+        // }
+
         this.hooks = {
-            'before:package:createDeploymentArtifacts': () =>
-                BbPromise.bind(this).then(this.run),
-            'before:deploy:function:packageFunction': () =>
-                BbPromise.bind(this).then(this.run),
-            'before:invoke:local:invoke': () =>
-                BbPromise.bind(this).then(this.run),
-            'before:offline:start:init': () =>
-                BbPromise.bind(this).then(this.run),
-            'before:step-functions-offline:start': () =>
-                BbPromise.bind(this).then(this.run),
+            'before:package:createDeploymentArtifacts': () => {
+                console.log('=> before:package:createDeploymentArtifacts')
+                BbPromise.bind(this).then(this.run)
+            },
+
+            'before:deploy:function:packageFunction': () => {
+                console.log('=> before:deploy:function:packageFunction')
+                BbPromise.bind(this).then(this.run)
+            },
+
+            'before:invoke:local:invoke': () => {
+                console.log('=> before:invoke:local:invoke')
+                BbPromise.bind(this).then(this.run)
+            },
+
+            'before:offline:start:init': () => {
+                console.log('=> before:offline:start:init')
+                BbPromise.bind(this).then(this.run)
+            },
+
+            'before:step-functions-offline:start': () => {
+                console.log('=> before:step-functions-offline:start')
+                BbPromise.bind(this).then(this.run)
+            },
+
             'after:package:createDeploymentArtifacts': () =>
                 BbPromise.bind(this).then(this.cleanup),
             'after:invoke:local:invoke': () =>
@@ -179,11 +247,9 @@ class ServerlessThundraPlugin {
                 const { layers } = provider
                 const func = slsFunctions[key]
                 const funcName = key
-                const runtime = func.runtime || provider.runtime
-
-                if (get(func, 'custom.thundra.disable', false)) {
-                    this.warnThundraDisabled(funcName)
-                    continue
+                let runtime = func.runtime || provider.runtime
+                if (runtime.startsWith('dotnetcore')) {
+                    runtime = 'dotnetcore'
                 }
 
                 if (!isString(runtime)) {
@@ -195,6 +261,11 @@ class ServerlessThundraPlugin {
                     this.log(
                         `Thundra does not support "${runtime}" at the moment, skipping function ${funcName}`
                     )
+                    continue
+                }
+
+                if (get(func, 'custom.thundra.disable', false)) {
+                    this.warnThundraDisabled(funcName)
                     continue
                 }
 
@@ -214,7 +285,6 @@ class ServerlessThundraPlugin {
                         }
                     }
                 }
-
                 if (language === 'python') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
@@ -279,36 +349,26 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                }else if(language === 'dotnet'){
+                } else if (language === 'dotnetcore') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
                         get(service, 'custom.thundra.dotnet.mode') ||
                         get(service, 'custom.thundra.mode') ||
                         'layer'
 
-                        if (method === 'layer') {
-                            if (func.handler.includes('::')) {
-                                this.log(
-                                    'Method specification for handler by "::" is not supported. ' +
-                                        'So function ' +
-                                        funcName +
-                                        ' will not be wrapped!'
-                                )
-                                continue
-                            }
-                            this.addLayer(func, funcName, 'dotnet')
-                            continue
-                        } else if (method === 'wrap') {
-                            this.log(
-                                'Code wrapping is not supported for java lambda functions. ' +
-                                    "Please use 'layer' method instead."
-                            )
-                        } else {
-                            this.warnMethodNotSupported(funcName, method)
-                            continue
-                        }
+                    if (method === 'layer') {
+                        this.addLayer(func, funcName, language)
+                        continue
+                    } else if (method === 'wrap') {
+                        this.log(
+                            'Code wrapping is not supported for .NET Core lambda functions. ' +
+                                "Please use 'layer' method instead."
+                        )
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
+                    }
                 }
-
                 funcs.push(
                     Object.assign(func, {
                         method: last(handler),
@@ -511,6 +571,9 @@ class ServerlessThundraPlugin {
     }
 
     getLatestLayerVersion(runtime, region) {
+        if (runtime == 'dotnetcore') {
+            runtime = 'dotnetcore2.1'
+        }
         const url = `https://layers.thundra.io/layers/${region}/${runtime}/latest`
         return new Promise((resolve, reject) => {
             axios
@@ -613,10 +676,14 @@ class ServerlessThundraPlugin {
         }
         this.funcs.forEach(func => {
             const handlerCode = generateWrapperCode(func, this.config)
-            fs.writeFileSync(
-                join(handlersFullDirPath, generateWrapperExt(func)),
-                handlerCode
-            )
+            const wrapperFile = generateWrapperExt(func)
+
+            if (handlerCode && wrapperFile) {
+                fs.writeFileSync(
+                    join(handlersFullDirPath, wrapperFile),
+                    handlerCode
+                )
+            }
         })
     }
 

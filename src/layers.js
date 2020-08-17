@@ -1,12 +1,17 @@
 const get = require('lodash.get')
 
+const LAYER_VERSION_DOTNET = '6'
+const LAYER_VERSION_JAVA = '56'
+const LAYER_VERSION_NODE = '69'
+const LAYER_VERSION_PYTHON = '38'
+
 exports.layerInfo = {
     java: getJavaLayerProps,
-    dotnet: {
-        layerName: 'thundra-lambda-dotnetcore21',
+    dotnetcore: {
+        layerName: 'thundra-lambda-dotnetcore21-layer',
         defaultLayerVersion: '6',
-        thundraHandlerName: 'Thundra.Agent.Lambda.Core.ThundraProxy',
-        needHandlerDelegation: true,
+        needHandlerDelegation: false,
+        customRuntime: true,
     },
     python: {
         layerName: 'thundra-lambda-python-layer',
