@@ -187,10 +187,9 @@ class ServerlessThundraPlugin {
                 const func = slsFunctions[key]
                 const funcName = key
                 let runtime = func.runtime || provider.runtime
+
                 if (runtime.startsWith('dotnetcore')) {
                     runtime = 'dotnetcore'
-                    provider.environment['thundra_agent_lambda_handler'] =
-                        func.handler
                 }
 
                 if (!isString(runtime)) {
@@ -298,6 +297,19 @@ class ServerlessThundraPlugin {
                         'layer'
 
                     if (method === 'layer') {
+                        if (!func['environment']) {
+                            func['environment'] = {}
+                        }
+
+                        func.environment['thundra_agent_lambda_handler'] =
+                            func.handler
+
+                        const apiKey =
+                            get(func, 'custom.thundra.apiKey') ||
+                            get(service, 'custom.thundra.apiKey')
+
+                        func.environment['thundra_apiKey'] = apiKey
+
                         this.addLayer(func, funcName, language)
                         continue
                     } else if (method === 'wrap') {
