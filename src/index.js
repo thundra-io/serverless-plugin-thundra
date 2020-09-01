@@ -186,14 +186,22 @@ class ServerlessThundraPlugin {
                 const { layers } = provider
                 const func = slsFunctions[key]
                 const funcName = key
+
+                if (get(func, 'custom.thundra.disable', false)) {
+                    this.warnThundraDisabled(funcName)
+                    continue
+                }
+
+                /**
+                 * Perform runtime checks
+                 */
                 let runtime = func.runtime || provider.runtime
+                if (!isString(runtime)) {
+                    continue
+                }
 
                 if (runtime.startsWith('dotnetcore')) {
                     runtime = 'dotnetcore'
-                }
-
-                if (!isString(runtime)) {
-                    continue
                 }
 
                 const language = AGENT_LANGS.find(lang => runtime.match(lang))
@@ -204,17 +212,21 @@ class ServerlessThundraPlugin {
                     continue
                 }
 
-                if (get(func, 'custom.thundra.disable', false)) {
-                    this.warnThundraDisabled(funcName)
-                    continue
-                }
-
+                /**
+                 * Split function handler into package, class and function parts
+                 */
                 const handler = isString(func.handler)
                     ? func.handler.split('.')
                     : []
+
+                    
                 let relativePath = ''
                 let localThundraDir = ''
 
+                /**
+                 * Init function environment and layers parameters
+                 * as an empty object if they are not existing
+                 */
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
@@ -225,6 +237,7 @@ class ServerlessThundraPlugin {
                         }
                     }
                 }
+
                 if (language === 'python') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
@@ -297,10 +310,6 @@ class ServerlessThundraPlugin {
                         'layer'
 
                     if (method === 'layer') {
-                        if (!func['environment']) {
-                            func['environment'] = {}
-                        }
-
                         func.environment['thundra_agent_lambda_handler'] =
                             func.handler
 
