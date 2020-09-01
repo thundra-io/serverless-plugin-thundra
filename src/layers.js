@@ -2,6 +2,12 @@ const get = require('lodash.get')
 
 exports.layerInfo = {
     java: getJavaLayerProps,
+    dotnetcore: {
+        layerName: 'thundra-lambda-dotnetcore21-layer',
+        defaultLayerVersion: '6',
+        needHandlerDelegation: false,
+        customRuntime: true,
+    },
     python: {
         layerName: 'thundra-lambda-python-layer',
         defaultLayerVersion: '38',

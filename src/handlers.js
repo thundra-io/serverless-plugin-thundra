@@ -27,6 +27,7 @@ def METHOD(event, context):
   return actual_METHOD(event, context)
       `,
     java8: null,
+    dotnetcore: null,
 }
 
 const EXTENTION_GENERATORS = {
@@ -40,7 +41,10 @@ const EXTENTION_GENERATORS = {
  * @return {String} The generated name.
  */
 exports.generateWrapperExt = function(func) {
-    return EXTENTION_GENERATORS[func.language](func.thundraHandler)
+    if (EXTENTION_GENERATORS[func.language]) {
+        return EXTENTION_GENERATORS[func.language](func.thundraHandler)
+    }
+    return null
 }
 
 /**
@@ -49,15 +53,18 @@ exports.generateWrapperExt = function(func) {
  * @return {String} The wrapper code.
  */
 exports.generateWrapperCode = function(func, config) {
-    const customNodePath =
-        get(func, 'custom.thundra.node_modules_path') ||
-        config.node_modules_path ||
-        ''
-    return THUNDRA_LANG_WRAPPERS[func.language]
-        .replace(/PATH/g, func.relativePath)
-        .replace(/METHOD/g, func.method)
-        .replace(/LOCAL_THUNDRA_DIR/g, func.localThundraDir)
-        .replace(/NODE_MODULES/g, customNodePath)
+    if (THUNDRA_LANG_WRAPPERS[func.language]) {
+        const customNodePath =
+            get(func, 'custom.thundra.node_modules_path') ||
+            config.node_modules_path ||
+            ''
+        return THUNDRA_LANG_WRAPPERS[func.language]
+            .replace(/PATH/g, func.relativePath)
+            .replace(/METHOD/g, func.method)
+            .replace(/LOCAL_THUNDRA_DIR/g, func.localThundraDir)
+            .replace(/NODE_MODULES/g, customNodePath)
+    }
+    return null
 }
 
 exports.AGENT_LANGS = Object.keys(THUNDRA_LANG_WRAPPERS)

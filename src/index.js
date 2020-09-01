@@ -57,6 +57,12 @@ const VALIDATE_LIB_BY_LANG = {
             'Please ensure that all necessary Thundra Java agents are installed'
         )
     },
+
+    dotnetcore() {
+        this.log(
+            'Please ensure that all necessary Thundra .NET Core agents are installed'
+        )
+    },
 }
 
 /**
@@ -68,6 +74,7 @@ class ServerlessThundraPlugin {
      * @param {Object} serverless
      * @param {Object} options options.
      */
+
     constructor(serverless = {}, options) {
         this.serverless = serverless
         this.prefix =
@@ -179,15 +186,22 @@ class ServerlessThundraPlugin {
                 const { layers } = provider
                 const func = slsFunctions[key]
                 const funcName = key
-                const runtime = func.runtime || provider.runtime
 
                 if (get(func, 'custom.thundra.disable', false)) {
                     this.warnThundraDisabled(funcName)
                     continue
                 }
 
+                /**
+                 * Perform runtime checks
+                 */
+                let runtime = func.runtime || provider.runtime
                 if (!isString(runtime)) {
                     continue
+                }
+
+                if (runtime.startsWith('dotnetcore')) {
+                    runtime = 'dotnetcore'
                 }
 
                 const language = AGENT_LANGS.find(lang => runtime.match(lang))
@@ -198,12 +212,21 @@ class ServerlessThundraPlugin {
                     continue
                 }
 
+                /**
+                 * Split function handler into package, class and function parts
+                 */
                 const handler = isString(func.handler)
                     ? func.handler.split('.')
                     : []
+
+                    
                 let relativePath = ''
                 let localThundraDir = ''
 
+                /**
+                 * Init function environment and layers parameters
+                 * as an empty object if they are not existing
+                 */
                 func.environment = func.environment || {}
                 func.layers = func.layers || []
 
@@ -279,8 +302,35 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                }
+                } else if (language === 'dotnetcore') {
+                    const method =
+                        get(func, 'custom.thundra.mode') ||
+                        get(service, 'custom.thundra.dotnet.mode') ||
+                        get(service, 'custom.thundra.mode') ||
+                        'layer'
 
+                    if (method === 'layer') {
+                        func.environment['thundra_agent_lambda_handler'] =
+                            func.handler
+
+                        const apiKey =
+                            get(func, 'custom.thundra.apiKey') ||
+                            get(service, 'custom.thundra.apiKey')
+
+                        func.environment['thundra_apiKey'] = apiKey
+
+                        this.addLayer(func, funcName, language)
+                        continue
+                    } else if (method === 'wrap') {
+                        this.log(
+                            'Code wrapping is not supported for .NET Core lambda functions. ' +
+                                "Please use 'layer' method instead."
+                        )
+                    } else {
+                        this.warnMethodNotSupported(funcName, method)
+                        continue
+                    }
+                }
                 funcs.push(
                     Object.assign(func, {
                         method: last(handler),
@@ -473,14 +523,25 @@ class ServerlessThundraPlugin {
                     }
                 })
                 .catch(err => {
-                    const rethrownError = new Error('Error while getting Thundra layers');
-                    rethrownError.stack = rethrownError.stack.split('\n').slice(0, 2).join('\n') + '\n' + err.stack;
-                    reject(rethrownError);
+                    const rethrownError = new Error(
+                        'Error while getting Thundra layers'
+                    )
+                    rethrownError.stack =
+                        rethrownError.stack
+                            .split('\n')
+                            .slice(0, 2)
+                            .join('\n') +
+                        '\n' +
+                        err.stack
+                    reject(rethrownError)
                 })
         })
     }
 
     getLatestLayerVersion(runtime, region) {
+        if (runtime == 'dotnetcore') {
+            runtime = 'dotnetcore2.1'
+        }
         const url = `https://layers.thundra.io/layers/${region}/${runtime}/latest`
         return new Promise((resolve, reject) => {
             axios
@@ -583,10 +644,14 @@ class ServerlessThundraPlugin {
         }
         this.funcs.forEach(func => {
             const handlerCode = generateWrapperCode(func, this.config)
-            fs.writeFileSync(
-                join(handlersFullDirPath, generateWrapperExt(func)),
-                handlerCode
-            )
+            const wrapperFile = generateWrapperExt(func)
+
+            if (handlerCode && wrapperFile) {
+                fs.writeFileSync(
+                    join(handlersFullDirPath, wrapperFile),
+                    handlerCode
+                )
+            }
         })
     }
 
