@@ -52,7 +52,7 @@ const VALIDATE_LIB_BY_LANG = {
     /**
      * Validates the java Thundra's library
      */
-    java8() {
+    java() {
         this.log(
             'Please ensure that all necessary Thundra Java agents are installed'
         )
@@ -196,8 +196,13 @@ class ServerlessThundraPlugin {
                  * Perform runtime checks
                  */
                 let runtime = func.runtime || provider.runtime
+
                 if (!isString(runtime)) {
                     continue
+                }
+
+                if (runtime.startsWith('java')) {
+                    runtime = 'java'
                 }
 
                 if (runtime.startsWith('dotnetcore')) {
@@ -219,7 +224,6 @@ class ServerlessThundraPlugin {
                     ? func.handler.split('.')
                     : []
 
-                    
                 let relativePath = ''
                 let localThundraDir = ''
 
@@ -275,7 +279,7 @@ class ServerlessThundraPlugin {
                         this.warnMethodNotSupported(funcName, method)
                         continue
                     }
-                } else if (language === 'java8') {
+                } else if (language === 'java') {
                     const method =
                         get(func, 'custom.thundra.mode') ||
                         get(service, 'custom.thundra.java.mode') ||
