@@ -16,6 +16,15 @@ npm install serverless-plugin-thundra
 
 Thundra's serverless plugin allows you to automatically wrap your **Python**, **Node.js**, **.NET Core** and **Java** Lambda functions to enable monitoring with Thundra.
 
+### Supported Runtimes
+
+| Runtime              | Version                |
+|----------------------|------------------------|
+| **Python**           | 2.7 , 3.6 , 3.7 , 3.8  |
+| **Node.js**          | 10.x , 12.x            |
+| **.NET Core**        | 2.1                    |
+| **Java**             | 8 , 11                 |
+
 Please ensure that along with this library, you also download the respective library of the Thundra agent related to the language in which you are
 developing.
 
