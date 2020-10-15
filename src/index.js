@@ -502,17 +502,21 @@ class ServerlessThundraPlugin {
             }
             Promise.all(latestLayerPromises)
                 .then(response => {
-                    for (let obj of response) {
-                        const compatibleRuntimes = get(
-                            obj,
-                            'latest.[0].LatestMatchingVersion.CompatibleRuntimes'
-                        )
-                        const arn = get(
-                            obj,
-                            'latest.[0].LatestMatchingVersion.LayerVersionArn'
-                        )
-                        for (let runtime of compatibleRuntimes) {
-                            this.latestLayerArnMap[runtime] = arn
+                if (Array.isArray(response)) {
+                        for (let obj of response) {
+                            const compatibleRuntimes = get(
+                                obj,
+                                'latest.[0].LatestMatchingVersion.CompatibleRuntimes'
+                            )
+                            const arn = get(
+                                obj,
+                                'latest.[0].LatestMatchingVersion.LayerVersionArn'
+                            )
+                            if (Array.isArray(compatibleRuntimes)) {
+                                for (let runtime of compatibleRuntimes) {
+                                    this.latestLayerArnMap[runtime] = arn
+                                }
+                            }
                         }
                     }
 
@@ -521,7 +525,7 @@ class ServerlessThundraPlugin {
                     } else {
                         reject(
                             new Error(
-                                `Thundra layer is not supported yet for the given runtime and region pair`
+                                `Thundra layer is not supported for the given runtime and region pair`
                             )
                         )
                     }
@@ -531,11 +535,11 @@ class ServerlessThundraPlugin {
                         'Error while getting Thundra layers'
                     )
                     rethrownError.stack =
-                        rethrownError.stack
-                            .split('\n')
-                            .slice(0, 2)
-                            .join('\n') +
-                        '\n' +
+                    rethrownError.stack
+                    .split('\n')
+                    .slice(0, 2)
+                    .join('\n') +
+                '\n' +
                         err.stack
                     reject(rethrownError)
                 })
