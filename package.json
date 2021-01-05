@@ -21,7 +21,7 @@
   "author": "Hamit Burak Emre <hamit@thundra.io> (https://www.thundra.io)",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bluebird": "^3.7.2",
     "lodash.get": "^4.4.2",
     "lodash.isempty": "^4.4.0",
