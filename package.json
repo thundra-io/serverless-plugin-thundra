@@ -3,7 +3,7 @@
   "version": "2.5.6",
   "description": "Thundra's serverless plugin for automatic wrapping",
   "repository": "thundra-io/serverless-plugin-thundra",
-  "homepage": "https://thundra.io",
+  "homepage": "https://thundra.io/apm",
   "main": "dist/bundle.js",
   "keywords": [
     "serverless",
