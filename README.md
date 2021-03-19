@@ -4,7 +4,7 @@
 
 Automatically wrap your AWS Lambda functions with Thundra for the serverless framework ⚡️ https://thundra.io
 
-Check out [Thundra docs](https://docs.thundra.io/v1.0.0/) for more information.
+Check out [Thundra docs](https://apm.docs.thundra.io) for more information.
 
 ## Installation
 
