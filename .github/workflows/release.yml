@@ -14,7 +14,9 @@ jobs:
         with:
           node-version: "12.x"
           registry-url: https://registry.npmjs.org
-      - run: npm install
-      - run: npm publish --access public
+      - name: NPM Install
+        run: npm install
+      - name: NPM Publish
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THUNDRA_NPM_API_KEY }}
