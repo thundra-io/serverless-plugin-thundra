@@ -17,10 +17,10 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-      - name: Use Node.js 8.x
+      - name: Use Node.js 10.x
         uses: actions/setup-node@v2
         with:
-          node-version: "8.x"
+          node-version: "10.x"
           registry-url: https://registry.npmjs.org
       - name: NPM Publish
         run: npm run release-${{ github.event.inputs.version_scale }}

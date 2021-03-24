@@ -40,7 +40,7 @@
     "rimraf": "^3.0.2"
   },
   "devDependencies": {
-    "prettier": "^1.19.1",
+    "prettier": "^2.2.1",
     "release-it": "^14.5.0",
     "terser-webpack-plugin": "^4.2.3",
     "webpack": "^4.44.2",
