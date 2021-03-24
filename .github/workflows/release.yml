@@ -2,6 +2,11 @@ name: NPM Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      version_scale:
+        description: "Version scale"
+        required: true
+        default: "patch"
 
 jobs:
   build:
@@ -14,9 +19,7 @@ jobs:
         with:
           node-version: "8.x"
           registry-url: https://registry.npmjs.org
-      - name: NPM Install
-        run: npm install
       - name: NPM Publish
-        run: npm publish --access public
+        run: npm run release-${{ github.event.inputs.version_scale }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THUNDRA_NPM_API_KEY }}
