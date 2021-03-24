@@ -43,7 +43,7 @@ const VALIDATE_LIB_BY_LANG = {
             return
         }
         const { dependencies = [] } = pack
-        if (!Object.keys(dependencies).some(dep => dep === '@thundra/core')) {
+        if (!Object.keys(dependencies).some((dep) => dep === '@thundra/core')) {
             throw new Error(
                 "Thundra's Node library must be installed in order to use this plugin!"
             )
@@ -133,7 +133,7 @@ class ServerlessThundraPlugin {
      * Wraps function handlers with Thundra
      */
     run() {
-        return BbPromise.fromCallback(cb => {
+        return BbPromise.fromCallback((cb) => {
             this.config = this.getConfig()
             this.prepareResources().then(() => {
                 if (this.checkIfWrap()) {
@@ -154,8 +154,8 @@ class ServerlessThundraPlugin {
      * Checks that all of the required Thundra libraries are installed.
      */
     libCheck() {
-        const languages = uniq(this.funcs.map(func => func.language))
-        languages.forEach(lang => {
+        const languages = uniq(this.funcs.map((func) => func.language))
+        languages.forEach((lang) => {
             VALIDATE_LIB_BY_LANG[lang].bind(this)()
         })
     }
@@ -209,7 +209,7 @@ class ServerlessThundraPlugin {
                     runtime = 'dotnetcore'
                 }
 
-                const language = AGENT_LANGS.find(lang => runtime.match(lang))
+                const language = AGENT_LANGS.find((lang) => runtime.match(lang))
                 if (!language) {
                     this.log(
                         `Thundra does not support "${runtime}" at the moment, skipping function ${funcName}`
@@ -501,7 +501,7 @@ class ServerlessThundraPlugin {
                 }
             }
             Promise.all(latestLayerPromises)
-                .then(response => {
+                .then((response) => {
                     if (Array.isArray(response)) {
                         for (let obj of response) {
                             const compatibleRuntimes = get(
@@ -530,15 +530,12 @@ class ServerlessThundraPlugin {
                         )
                     }
                 })
-                .catch(err => {
+                .catch((err) => {
                     const rethrownError = new Error(
                         'Error while getting Thundra layers'
                     )
                     rethrownError.stack =
-                        rethrownError.stack
-                            .split('\n')
-                            .slice(0, 2)
-                            .join('\n') +
+                        rethrownError.stack.split('\n').slice(0, 2).join('\n') +
                         '\n' +
                         err.stack
                     reject(rethrownError)
@@ -554,10 +551,10 @@ class ServerlessThundraPlugin {
         return new Promise((resolve, reject) => {
             axios
                 .get(url)
-                .then(response => {
+                .then((response) => {
                     resolve(response.data)
                 })
-                .catch(error => {
+                .catch((error) => {
                     reject(error)
                 })
         })
@@ -650,7 +647,7 @@ class ServerlessThundraPlugin {
                 throw err
             }
         }
-        this.funcs.forEach(func => {
+        this.funcs.forEach((func) => {
             const handlerCode = generateWrapperCode(func, this.config)
             const wrapperFile = generateWrapperExt(func)
 
@@ -667,7 +664,7 @@ class ServerlessThundraPlugin {
      * Replaces the functions original handlers with Thundra's handlers.
      */
     assignHandlers() {
-        this.funcs.forEach(func => {
+        this.funcs.forEach((func) => {
             set(
                 this.serverless.service.functions,
                 `${func.funcName}.handler`,
@@ -696,7 +693,7 @@ class ServerlessThundraPlugin {
      * Cleaning Thundra's handlers
      */
     cleanup() {
-        return BbPromise.fromCallback(cb => {
+        return BbPromise.fromCallback((cb) => {
             this.log("Cleaning up Thundra's handlers")
             rimraf(
                 join(this.originalServicePath, this.config.thundraHandlerDir),
