@@ -31,8 +31,8 @@ def METHOD(event, context):
 }
 
 const EXTENTION_GENERATORS = {
-    node: name => `${name}.js`,
-    python: name => `${name}.py`,
+    node: (name) => `${name}.js`,
+    python: (name) => `${name}.py`,
 }
 
 /**
@@ -40,7 +40,7 @@ const EXTENTION_GENERATORS = {
  * @param {Object} func The function to wrap.
  * @return {String} The generated name.
  */
-exports.generateWrapperExt = function(func) {
+exports.generateWrapperExt = function (func) {
     if (EXTENTION_GENERATORS[func.language]) {
         return EXTENTION_GENERATORS[func.language](func.thundraHandler)
     }
@@ -52,7 +52,7 @@ exports.generateWrapperExt = function(func) {
  * @param {Object} func The function to wrap.
  * @return {String} The wrapper code.
  */
-exports.generateWrapperCode = function(func, config) {
+exports.generateWrapperCode = function (func, config) {
     if (THUNDRA_LANG_WRAPPERS[func.language]) {
         const customNodePath =
             get(func, 'custom.thundra.node_modules_path') ||
