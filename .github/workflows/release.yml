@@ -11,9 +11,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
+      - name: Configure Git User
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
       - name: Use Node.js 8.x
         uses: actions/setup-node@v2
         with:
@@ -23,3 +26,4 @@ jobs:
         run: npm run release-${{ github.event.inputs.version_scale }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THUNDRA_NPM_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.THUNDRA_GITHUB_ACCESS_TOKEN }}
