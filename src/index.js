@@ -573,7 +573,7 @@ class ServerlessThundraPlugin {
 
     warnLayerPreparationSkipped(funcName) {
         this.log(
-            `Thundra layer preparation skipped for disabled ${funcName}, skipping.`
+            `Thundra layer preparation skipped for disabled function with the name ${funcName}.`
         )
     }
 
