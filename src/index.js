@@ -487,6 +487,11 @@ class ServerlessThundraPlugin {
                 for (const key in functions) {
                     if (functions.hasOwnProperty(key)) {
                         const func = functions[key]
+                        const funcName = key
+                        if (get(func, 'custom.thundra.disable', false)) {
+                            this.warnLayerPreparationSkipped(funcName)
+                            continue
+                        }
                         const runtime = get(func, 'runtime')
                         if (runtime && !promiseMap[runtime]) {
                             latestLayerPromises.push(
@@ -563,6 +568,12 @@ class ServerlessThundraPlugin {
     warnThundraDisabled(funcName) {
         this.log(
             `Thundra integration is disabled for function ${funcName}, skipping.`
+        )
+    }
+
+    warnLayerPreparationSkipped(funcName) {
+        this.log(
+            `Thundra layer preparation skipped for disabled function with the name ${funcName}.`
         )
     }
 
