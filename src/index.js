@@ -361,17 +361,12 @@ class ServerlessThundraPlugin {
             this.warnNoLayerInfoExistsForLang(lang)
         }
         const { delegatedHandlerEnvVarName, layerAwsAccountNo } = layerInfo
-        const userLayerVersion = getUserLayerVersion(func, service, lang)
         const {
             layerName,
-            defaultLayerVersion,
             thundraHandlerName,
             needHandlerDelegation,
             customRuntime,
-        } =
-            typeof layerInfo[lang] === 'function'
-                ? layerInfo[lang](func, service, userLayerVersion)
-                : layerInfo[lang]
+        } = layerInfo[lang];
 
         let skipHandlerDelegation = false
         const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
@@ -416,6 +411,31 @@ class ServerlessThundraPlugin {
             return
         }
 
+        if (!skipLayerAddition) {
+            const userLayerVersion = getUserLayerVersion(func, service, lang)
+            if (userLayerVersion) {
+                if (userLayerVersion.toLowerCase() === 'latest') {
+                    func.layers.push(this.latestLayerArnMap[func.runtime])
+                } else if (!this.isValidLayerVersion(userLayerVersion)) {
+                    this.warnNoLayerInfoExistsForLangAndVersion(lang, userLayerVersion);
+                } else {
+                    const layerRegion = service.provider.region
+                    const layerARN = getLayerARN(
+                        layerRegion,
+                        layerAwsAccountNo,
+                        layerName,
+                        userLayerVersion
+                    )
+    
+                    func.layers.push(layerARN)
+                }
+            } else {
+                func.layers.push(this.latestLayerArnMap[func.runtime])
+            }
+        } else {
+            this.warnLayerAlreadyExists(funcName)
+        }
+
         if (needHandlerDelegation) {
             if (!skipHandlerDelegation) {
                 func.environment[delegatedHandlerEnvVarName] = func.handler
@@ -424,27 +444,7 @@ class ServerlessThundraPlugin {
                 this.warnHandlerDelegationSkipped(funcName)
             }
         }
-
-        if (!skipLayerAddition) {
-            const layerRegion = service.provider.region
-            const layerVersion = this.isValidLayerVersion(userLayerVersion)
-                ? userLayerVersion
-                : defaultLayerVersion
-            const layerARN = getLayerARN(
-                layerRegion,
-                layerAwsAccountNo,
-                layerName,
-                layerVersion
-            )
-            if (layerVersion === 'latest') {
-                func.layers.push(this.latestLayerArnMap[func.runtime])
-            } else {
-                func.layers.push(layerARN)
-            }
-        } else {
-            this.warnLayerAlreadyExists(funcName)
-        }
-
+        
         if (customRuntime) {
             func.runtime = 'provided'
         }
@@ -593,6 +593,10 @@ class ServerlessThundraPlugin {
 
     warnNoLayerInfoExistsForLang(lang) {
         this.log('No layer information exist for given lang: ' + lang)
+    }
+
+    warnNoLayerInfoExistsForLangAndVersion(lang, version) {
+        this.log(`No layer information exist for given lang: ${lang} given version: ${version}`)
     }
 
     warnHandlerDelegationSkipped(funcName) {
