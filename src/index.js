@@ -414,10 +414,11 @@ class ServerlessThundraPlugin {
         if (!skipLayerAddition) {
             const userLayerVersion = getUserLayerVersion(func, service, lang)
             if (userLayerVersion) {
-                if (userLayerVersion.toLowerCase() === 'latest') {
+                if (typeof userLayerVersion === 'string' 
+                && userLayerVersion.toLowerCase() === 'latest') {
                     func.layers.push(this.latestLayerArnMap[func.runtime])
                 } else if (!this.isValidLayerVersion(userLayerVersion)) {
-                    this.warnNoLayerInfoExistsForLangAndVersion(lang, userLayerVersion);
+                    this.warnNoLayerInfoExistsForLangAndVersion(lang, userLayerVersion)
                 } else {
                     const layerRegion = service.provider.region
                     const layerARN = getLayerARN(
