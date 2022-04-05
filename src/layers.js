@@ -1,105 +1,30 @@
 const get = require('lodash.get')
 
 exports.layerInfo = {
-    java: getJavaLayerProps,
+    java: {
+        layerName: 'thundra-lambda-java-layer',
+        thundraHandlerName:
+            'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
+        needHandlerDelegation: true,
+    },
     dotnetcore: {
         layerName: 'thundra-lambda-dotnetcore21-layer',
-        defaultLayerVersion: '6',
         needHandlerDelegation: false,
         customRuntime: true,
     },
     python: {
         layerName: 'thundra-lambda-python-layer',
-        defaultLayerVersion: '38',
         thundraHandlerName: 'thundra.handler.wrapper',
         needHandlerDelegation: true,
     },
-    node: getNodeLayerProps,
+    node: {
+        layerName: 'thundra-lambda-node-layer',
+        needHandlerDelegation: true,
+        thundraHandlerName:
+            'thundra_handler.wrapper',
+    },
     layerAwsAccountNo: 269863060030,
-    delegatedHandlerEnvVarName: 'thundra_agent_lambda_handler',
-}
-
-function getNodeLayerProps(func, service, userLayerVersion) {
-    const optsWithCR = {
-        layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '70',
-        needHandlerDelegation: false,
-        customRuntime: true,
-    }
-
-    const optsWithoutCR = {
-        layerName: 'thundra-lambda-node-layer',
-        defaultLayerVersion: '70',
-        needHandlerDelegation: true,
-        thundraHandlerName:
-            '/opt/nodejs/node_modules/@thundra/core/dist/handler.wrapper',
-    }
-
-    const optsMinified = {
-        layerName: 'thundra-lambda-node-layer-minified',
-        defaultLayerVersion: '70',
-        needHandlerDelegation: true,
-        thundraHandlerName: 'thundra_handler.wrapper',
-    }
-
-    try {
-        const withoutCRVersionThreshold = 32
-        const minifiedLayerThreshold = 57
-
-        const eligibleForWithoutCR =
-            userLayerVersion === undefined ||
-            userLayerVersion === 'latest' ||
-            Number(userLayerVersion) > withoutCRVersionThreshold
-
-        const useCustomRuntime =
-            get(func, 'custom.thundra.useCustomRuntime') ||
-            get(service, 'custom.thundra.useCustomRuntime') ||
-            false
-
-        const versionStr = func.runtime.split('nodejs')[1].split('.')[0]
-        const version = Number(versionStr)
-
-        if (!eligibleForWithoutCR || useCustomRuntime || version <= 8) {
-            return optsWithCR
-        }
-
-        const eligibleForMinified =
-            userLayerVersion === undefined ||
-            userLayerVersion === 'latest' ||
-            Number(userLayerVersion) >= minifiedLayerThreshold
-
-        return eligibleForMinified ? optsMinified : optsWithoutCR
-    } catch (e) {
-        return optsWithCR
-    }
-}
-
-function getJavaLayerProps(func, service, userLayerVersion) {
-    const optsWithoutCR = {
-        layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '56',
-        thundraHandlerName:
-            'io.thundra.agent.lambda.core.handler.ThundraLambdaHandler',
-        needHandlerDelegation: true,
-    }
-
-    const optsWithCR = {
-        layerName: 'thundra-lambda-java-layer',
-        defaultLayerVersion: '56',
-        customRuntime: true,
-        needHandlerDelegation: false,
-    }
-
-    const useCustomRuntime =
-        get(func, 'custom.thundra.useCustomRuntime') ||
-        get(service, 'custom.thundra.useCustomRuntime') ||
-        false
-
-    if (useCustomRuntime) {
-        return optsWithCR
-    }
-
-    return useCustomRuntime ? optsWithCR : optsWithoutCR
+    delegatedHandlerEnvVarName: 'THUNDRA_AGENT_LAMBDA_HANDLER',
 }
 
 exports.getLayerARN = (region, accountNo, name, version) => {
