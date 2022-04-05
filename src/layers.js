@@ -20,8 +20,7 @@ exports.layerInfo = {
     node: {
         layerName: 'thundra-lambda-node-layer',
         needHandlerDelegation: true,
-        thundraHandlerName:
-            'thundra_handler.wrapper',
+        thundraHandlerName: 'thundra_handler.wrapper',
     },
     layerAwsAccountNo: 269863060030,
     delegatedHandlerEnvVarName: 'THUNDRA_AGENT_LAMBDA_HANDLER',

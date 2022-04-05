@@ -366,7 +366,7 @@ class ServerlessThundraPlugin {
             thundraHandlerName,
             needHandlerDelegation,
             customRuntime,
-        } = layerInfo[lang];
+        } = layerInfo[lang]
 
         let skipHandlerDelegation = false
         const delegatedHandler = func.environment[delegatedHandlerEnvVarName]
@@ -414,11 +414,16 @@ class ServerlessThundraPlugin {
         if (!skipLayerAddition) {
             const userLayerVersion = getUserLayerVersion(func, service, lang)
             if (userLayerVersion) {
-                if (typeof userLayerVersion === 'string' 
-                && userLayerVersion.toLowerCase() === 'latest') {
+                if (
+                    typeof userLayerVersion === 'string' &&
+                    userLayerVersion.toLowerCase() === 'latest'
+                ) {
                     func.layers.push(this.latestLayerArnMap[func.runtime])
                 } else if (!this.isValidLayerVersion(userLayerVersion)) {
-                    this.warnNoLayerInfoExistsForLangAndVersion(lang, userLayerVersion)
+                    this.warnNoLayerInfoExistsForLangAndVersion(
+                        lang,
+                        userLayerVersion
+                    )
                 } else {
                     const layerRegion = service.provider.region
                     const layerARN = getLayerARN(
@@ -427,7 +432,7 @@ class ServerlessThundraPlugin {
                         layerName,
                         userLayerVersion
                     )
-    
+
                     func.layers.push(layerARN)
                 }
             } else {
@@ -445,7 +450,7 @@ class ServerlessThundraPlugin {
                 this.warnHandlerDelegationSkipped(funcName)
             }
         }
-        
+
         if (customRuntime) {
             func.runtime = 'provided'
         }
@@ -597,7 +602,9 @@ class ServerlessThundraPlugin {
     }
 
     warnNoLayerInfoExistsForLangAndVersion(lang, version) {
-        this.log(`No layer information exist for given lang: ${lang} given version: ${version}`)
+        this.log(
+            `No layer information exist for given lang: ${lang} given version: ${version}`
+        )
     }
 
     warnHandlerDelegationSkipped(funcName) {

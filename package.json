@@ -1,6 +1,6 @@
 {
   "name": "serverless-plugin-thundra",
-  "version": "2.5.9",
+  "version": "2.6.0",
   "description": "Thundra's serverless plugin for automatic wrapping",
   "repository": "thundra-io/serverless-plugin-thundra",
   "homepage": "https://thundra.io/apm",
