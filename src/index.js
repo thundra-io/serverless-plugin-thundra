@@ -357,7 +357,7 @@ class ServerlessThundraPlugin {
             func.runtime = providerRuntime
         }
 
-        if (!lang in layerInfo) {
+        if (!(lang in layerInfo)) {
             this.warnNoLayerInfoExistsForLang(lang)
         }
         const { delegatedHandlerEnvVarName, layerAwsAccountNo } = layerInfo

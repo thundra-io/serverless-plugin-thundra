@@ -14,7 +14,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "prettier --config .prettierrc.json --write ./src/*.js",
-    "build": "webpack",
+    "build": "node scripts/build.js",
     "release-patch": "release-it --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
     "release-minor": "release-it minor --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
     "release-major": "release-it major --ci --git.commit --git.push --git.tag --git.tagName='v${version}' --github.release --no-git.requireCleanWorkingDir --no-git.requireUpstream --npm.publish --npm.skipChecks",
@@ -42,8 +42,6 @@
   "devDependencies": {
     "prettier": "^2.2.1",
     "release-it": "^14.14.0",
-    "terser-webpack-plugin": "^4.2.3",
-    "webpack": "^5.71.0",
-    "webpack-cli": "^3.3.12"
+    "esbuild": "^0.14.32"
   }
 }
