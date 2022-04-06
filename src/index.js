@@ -86,8 +86,7 @@ class ServerlessThundraPlugin {
         this.originalServicePath = this.serverless.config.servicePath
         this.commands = {
             Thundra: {
-                usage:
-                    'Automatically wraps your function handlers with Thundra.',
+                usage: 'Automatically wraps your function handlers with Thundra.',
                 lifecycleEvents: ['run', 'clean'],
                 commands: {
                     clean: {
