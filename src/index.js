@@ -396,6 +396,11 @@ class ServerlessThundraPlugin {
                     }
                 }
             }
+        } else if (lang === 'node') {
+            const nodeOptions = func.environment['NODE_OPTIONS'];
+            func.environment['NODE_OPTIONS'] = nodeOptions 
+                ? nodeOptions + ' -r @thundra/core/dist/bootstrap/lambda'
+                : '-r @thundra/core/dist/bootstrap/lambda'
         }
 
         var skipLayerAddition = false
