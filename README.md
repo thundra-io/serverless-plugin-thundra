@@ -53,7 +53,7 @@ plugins:
 
 Ensure that the plugin is the first plugin you add under `plugins`
 
-Also make sure that you have `thundra_apiKey` environment variable set to your api key, to see your invocations in the Thundra web console.
+Also make sure that you have `THUNDRA_APIKEY` environment variable set to your api key, to see your invocations in the Thundra web console.
 
 ## Configuration
 
